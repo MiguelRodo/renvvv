@@ -1,24 +1,32 @@
 # Integration tests for renvvv_update with real renv lockfiles
 
-# Helper to set up a temporary renv project
-.setup_renv_project <- function() {
+# Helper to set up a temporary renv project with cache isolation
+.setup_renv_project <- function(pkgs = NULL) {
   tmp <- tempfile("renvvv_update_test_")
   dir.create(tmp)
   old_wd <- setwd(tmp)
   old_libpaths <- .libPaths()
   old_env <- Sys.getenv("RENV_CONFIG_PAK_ENABLED", unset = NA)
   Sys.setenv(RENV_CONFIG_PAK_ENABLED = "FALSE")
+  # Purge test packages from renv cache to avoid cross-test interference
+  for (pkg in pkgs) {
+    try(renv::purge(pkg, prompt = FALSE), silent = TRUE)
+  }
   renv::init(bare = TRUE, restart = FALSE)
   list(
     dir = tmp,
     old_wd = old_wd,
     old_libpaths = old_libpaths,
-    old_env = old_env
+    old_env = old_env,
+    pkgs = pkgs
   )
 }
 
 # Helper to tear down a temporary renv project
 .teardown_renv_project <- function(ctx) {
+  for (pkg in ctx$pkgs) {
+    try(unloadNamespace(pkg), silent = TRUE)
+  }
   setwd(ctx$old_wd)
   .libPaths(ctx$old_libpaths)
   if (is.na(ctx$old_env)) {
@@ -27,6 +35,16 @@
     Sys.setenv(RENV_CONFIG_PAK_ENABLED = ctx$old_env)
   }
   unlink(ctx$dir, recursive = TRUE)
+}
+
+# Helper to check if GitHub API is accessible
+.github_api_available <- function() {
+  tryCatch({
+    con <- url("https://api.github.com", open = "r")
+    on.exit(close(con))
+    TRUE
+  }, error = function(e) FALSE,
+  warning = function(w) FALSE)
 }
 
 test_that("renvvv_update function exists", {
@@ -40,22 +58,17 @@ test_that("renvvv_update updates a CRAN package to latest version", {
     "renv not available"
   )
 
-  ctx <- .setup_renv_project()
+  ctx <- .setup_renv_project(pkgs = "tinytest")
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
-  # Determine an old version of tinytest dynamically
-  # The archive always has older versions; use 1.3.1 which is known old
+  # Install an old version of tinytest
   old_version <- "1.3.1"
   renv::install(paste0("tinytest@", old_version), prompt = FALSE)
   installed_version <- as.character(packageVersion("tinytest"))
   expect_equal(installed_version, old_version)
 
   # Snapshot to create a lockfile with the old version
-  renv::snapshot(
-    packages = "tinytest",
-    type = "packages",
-    confirm = FALSE
-  )
+  renv::snapshot(packages = "tinytest", confirm = FALSE)
 
   # Verify the lockfile records the old version
   lockfile <- renv::lockfile_read()
@@ -77,17 +90,14 @@ test_that("renvvv_update updates a GitHub package", {
     requireNamespace("renv", quietly = TRUE),
     "renv not available"
   )
+  skip_if_not(.github_api_available(), "GitHub API not accessible")
 
-  ctx <- .setup_renv_project()
+  ctx <- .setup_renv_project(pkgs = "praise")
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Install praise from GitHub and snapshot
   renv::install("gaborcsardi/praise", prompt = FALSE)
-  renv::snapshot(
-    packages = "praise",
-    type = "packages",
-    confirm = FALSE
-  )
+  renv::snapshot(packages = "praise", confirm = FALSE)
 
   # Verify it's in the lockfile as a GitHub package
   lockfile <- renv::lockfile_read()
@@ -98,5 +108,7 @@ test_that("renvvv_update updates a GitHub package", {
   suppressMessages(renvvv_update(non_github = FALSE, github = TRUE))
 
   # Verify praise is still installed after update
-  expect_true(requireNamespace("praise", quietly = TRUE))
+  expect_true(
+    nzchar(system.file(package = "praise", lib.loc = .libPaths()[1]))
+  )
 })
