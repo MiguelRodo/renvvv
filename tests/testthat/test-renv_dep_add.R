@@ -11,6 +11,26 @@ test_that(".check_renv helper exists", {
   expect_true(is.function(renvvv:::.check_renv))
 })
 
+test_that(".check_write_permission helper exists", {
+  expect_true(is.function(renvvv:::.check_write_permission))
+})
+
+# Test permission checks
+test_that("renvvv_dep_add errors without force in non-interactive mode", {
+  temp_dir <- tempdir()
+  old_wd <- getwd()
+  on.exit({
+    setwd(old_wd)
+    unlink(file.path(temp_dir, "_dependencies.R"))
+  })
+  setwd(temp_dir)
+
+  expect_error(
+    renvvv_dep_add("utils", force = FALSE),
+    "This function requires permission to write files"
+  )
+})
+
 # Test renvvv_dep_add functionality
 test_that("renvvv_dep_add creates _dependencies.R when it doesn't exist", {
   temp_dir <- tempdir()
@@ -23,7 +43,7 @@ test_that("renvvv_dep_add creates _dependencies.R when it doesn't exist", {
 
   # Create test with a package that's already installed (utils is built-in)
   suppressMessages({
-    result <- renvvv_dep_add("utils")
+    result <- renvvv_dep_add("utils", force = TRUE)
   })
 
   expect_true(file.exists("_dependencies.R"))
@@ -45,7 +65,7 @@ test_that("renvvv_dep_add appends to existing _dependencies.R", {
   writeLines("library(stats)", "_dependencies.R")
 
   suppressMessages({
-    result <- renvvv_dep_add("utils")
+    result <- renvvv_dep_add("utils", force = TRUE)
   })
 
   expect_true(file.exists("_dependencies.R"))
@@ -65,8 +85,8 @@ test_that("renvvv_dep_add doesn't add duplicate library calls", {
 
   # Add the same package twice
   suppressMessages({
-    renvvv_dep_add("utils")
-    renvvv_dep_add("utils")
+    renvvv_dep_add("utils", force = TRUE)
+    renvvv_dep_add("utils", force = TRUE)
   })
 
   content <- readLines("_dependencies.R")
@@ -85,7 +105,7 @@ test_that("renvvv_dep_add handles GitHub remote syntax", {
 
   # Use a package with remote syntax (just test file writing, not installation)
   suppressMessages({
-    result <- renvvv_dep_add("user/package")
+    result <- renvvv_dep_add("user/package", force = TRUE)
   })
 
   content <- readLines("_dependencies.R")
@@ -102,7 +122,7 @@ test_that("renvvv_dep_add returns invisible TRUE", {
   setwd(temp_dir)
 
   suppressMessages({
-    result <- withVisible(renvvv_dep_add("utils"))
+    result <- withVisible(renvvv_dep_add("utils", force = TRUE))
   })
 
   expect_true(result$value)
@@ -119,7 +139,7 @@ test_that("renvvv_dep_add handles multiple packages", {
   setwd(temp_dir)
 
   suppressMessages({
-    renvvv_dep_add(c("utils", "stats", "tools"))
+    renvvv_dep_add(c("utils", "stats", "tools"), force = TRUE)
   })
 
   content <- readLines("_dependencies.R")

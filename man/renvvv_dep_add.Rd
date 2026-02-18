@@ -4,13 +4,17 @@
 \alias{renvvv_dep_add}
 \title{Add Packages to \verb{_dependencies.R} for renv}
 \usage{
-renvvv_dep_add(pkg)
+renvvv_dep_add(pkg, force = FALSE)
 }
 \arguments{
 \item{pkg}{Character vector of package names.
 Packages to add to \verb{_dependencies.R} and install if not already installed.
 Can use the "\verb{<remote>/<repo>}" syntax for installing from remotes
 (e.g., GitHub), provided that \verb{<repo>} is also the name of the package.}
+
+\item{force}{Logical. If \code{FALSE} (default), prompts for confirmation in
+interactive sessions or errors in non-interactive sessions. Set to \code{TRUE}
+to proceed without prompting.}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -22,11 +26,14 @@ Installs packages if they are not already installed.
 }
 \examples{
 \dontrun{
-# Add and install CRAN packages
+# Add and install CRAN packages (interactive mode will prompt)
 renvvv_dep_add(c("dplyr", "ggplot2"))
 
 # Add and install a GitHub package
 renvvv_dep_add("hadley/httr")
+
+# Non-interactive mode requires force = TRUE
+renvvv_dep_add(c("dplyr", "ggplot2"), force = TRUE)
 }
 
 }
