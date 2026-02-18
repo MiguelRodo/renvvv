@@ -233,6 +233,12 @@
 .renv_install <- function(pkg, biocmanager_install, is_bioc, project = NULL) {
   .ensure_cli()
 
+  # Determine library path for renv operations
+  library_path <- NULL
+  if (!is.null(project)) {
+    library_path <- renv:::renv_paths_library(project = project)
+  }
+
   if (is_bioc) {
     if (biocmanager_install) {
       if (!requireNamespace("BiocManager", quietly = TRUE)) {
@@ -243,7 +249,12 @@
           "Installing Bioconductor packages using renv: {.pkg {pkg}}"
         )
         tryCatch(
-          renv::install(paste0("bioc::", pkg), prompt = FALSE, project = project),
+          renv::install(
+            paste0("bioc::", pkg),
+            prompt = FALSE,
+            project = project,
+            library = library_path
+          ),
           error = function(e) {
             cli::cli_alert_danger(
               "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
@@ -268,7 +279,12 @@
         "Installing Bioconductor packages using renv: {.pkg {pkg}}"
       )
       tryCatch(
-        renv::install(paste0("bioc::", pkg), prompt = FALSE, project = project),
+        renv::install(
+          paste0("bioc::", pkg),
+          prompt = FALSE,
+          project = project,
+          library = library_path
+        ),
         error = function(e) {
           cli::cli_alert_danger(
             "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
@@ -279,7 +295,12 @@
   } else {
     cli::cli_alert_info("Installing packages: {.pkg {pkg}}")
     tryCatch(
-      renv::install(pkg, prompt = FALSE, project = project),
+      renv::install(
+        pkg,
+        prompt = FALSE,
+        project = project,
+        library = library_path
+      ),
       error = function(e) {
         cli::cli_alert_danger(
           "Failed to install packages: {.pkg {pkg}}. Error: {e$message}"
