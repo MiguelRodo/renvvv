@@ -10,14 +10,13 @@
 coverage](https://codecov.io/gh/MiguelRodo/renvvv/graph/badge.svg)](https://app.codecov.io/gh/MiguelRodo/renvvv)
 <!-- badges: end -->
 
-renvvv provides utility functions for managing R project dependencies
-using [`renv`](https://rstudio.github.io/renv/), with specialized tools
-for HPC environments.
+renvvv provides more robust `renv` restore and update functions that
+keep going even when individual packages fail. Standard
+`renv::restore()` stops on the first error; renvvv catches failures,
+retries them individually, and reports what couldn't be installed — so
+you don't lose progress on the packages that *can* be restored.
 
 ## Installation
-
-You can install the development version of renvvv from
-[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -26,42 +25,34 @@ devtools::install_github("MiguelRodo/renvvv")
 
 ## Usage
 
-### renv Package Management
-
-The primary functionality of this package is robust `renv` restoration
-and management:
-
 ``` r
 library(renvvv)
 
-# Restore packages from renv lockfile (recommended)
+# Restore packages from lockfile — continues past individual failures
 renvvv_restore()
 
-# Update packages to latest versions
+# Update all lockfile packages to latest versions
 renvvv_update()
 
-# Restore then update all packages
+# Restore first, then update
 renvvv_restore_and_update()
-
-# Add packages to _dependencies.R and install them
-renvvv_dep_add(c("dplyr", "ggplot2"))
 ```
 
-The `renvvv_restore()` function handles CRAN, Bioconductor, and GitHub
-packages with automatic fallback for packages that fail to restore.
+All three functions handle CRAN, Bioconductor, and GitHub packages. Use
+the `github` and `non_github` arguments to control which sources to
+process.
 
-### HPC Setup
-
-Configure your project for HPC (SLURM) environments:
+### Other Utilities
 
 ``` r
-# Set up .Rprofile to use scratch directory for renv on HPC
-renvvv_hpc_renv_setup()
+# Add packages to _dependencies.R and install them
+renvvv_dep_add(c("dplyr", "ggplot2"))
 
-# Configure renv to use correct repositories across different OSs
+# HPC (SLURM) setup helpers
+renvvv_hpc_renv_setup()
 renvvv_renv_repos_setup()
 ```
 
 ## License
 
-This package is licensed under the MIT License.
+MIT

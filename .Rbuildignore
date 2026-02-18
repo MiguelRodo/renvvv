@@ -12,3 +12,6 @@
 ^EntireProject\.code-workspace$
 ^\.github$
 ^codecov\.yml$
+^tests/testthat/renv$
+^tests/testthat/\.Rprofile$
+^tests/testthat/renv\.lock$
