@@ -1,0 +1,20 @@
+Package: renvvv
+Title: renv Helper Functions and HPC Setup Tools
+Version: 0.0.7
+Authors@R: 
+    person("Miguel", "Rodo", , "rdxmig002@myuct.ac.za", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-2036-4878"))
+Description: Utility functions for managing R project dependencies using 'renv',
+    with specialized tools for HPC environments. Provides helpers for package
+    installation, restoration, and configuration.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: renv, cli
+Suggests: BiocManager, rcmdcheck, testthat (>= 3.0.0)
+Config/testthat/edition: 3
+NeedsCompilation: no
+Packaged: 2026-02-18 13:59:54 UTC; runner
+Author: Miguel Rodo [aut, cre] (ORCID: <https://orcid.org/0000-0002-2036-4878>)
+Maintainer: Miguel Rodo <rdxmig002@myuct.ac.za>
