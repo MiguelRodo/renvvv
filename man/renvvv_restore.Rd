@@ -4,7 +4,12 @@
 \alias{renvvv_restore}
 \title{Restore renv Lockfile Packages}
 \usage{
-renvvv_restore(github = TRUE, non_github = TRUE, biocmanager_install = FALSE)
+renvvv_restore(
+  github = TRUE,
+  non_github = TRUE,
+  biocmanager_install = FALSE,
+  project = NULL
+)
 }
 \arguments{
 \item{github}{Logical. Whether to process GitHub packages. Default is \code{TRUE}.}
@@ -17,6 +22,10 @@ If \code{TRUE}, Bioconductor packages will be installed using
 \code{BiocManager::install}; otherwise,
 \code{renv::install("bioc::<package_name>")} will be used.
 Default is \code{FALSE}.}
+
+\item{project}{The project directory. If \code{NULL}, defaults to the current
+working directory. When specified, packages will be installed to the
+project's renv library even if renv is not activated.}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -33,6 +42,9 @@ renvvv_restore()
 
 # Only restore non-GitHub packages
 renvvv_restore(github = FALSE)
+
+# Restore to a specific project without activating renv
+renvvv_restore(project = "/path/to/project")
 }
 
 }

@@ -72,14 +72,16 @@
                                                github,
                                                non_github,
                                                restore,
-                                               biocmanager_install) {
+                                               biocmanager_install,
+                                               project = NULL) {
   # CRAN Packages
   .renv_restore_or_update_actual_wrapper(
     pkg = package_list[["regular"]],
     act = non_github,
     restore = restore,
     source = "CRAN",
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    project = project
   )
 
   # Bioconductor Packages
@@ -88,7 +90,8 @@
     act = non_github,
     restore = restore,
     source = "Bioconductor",
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    project = project
   )
 
   # GitHub Packages
@@ -97,7 +100,8 @@
     act = github,
     restore = restore,
     source = "GitHub",
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    project = project
   )
   invisible(TRUE)
 }
@@ -107,7 +111,8 @@
                                                          act,
                                                          restore,
                                                          source,
-                                                         biocmanager_install) {
+                                                         biocmanager_install,
+                                                         project = NULL) {
   if (length(pkg) == 0L) {
     cli::cli_alert_info("No {source} packages to process.")
     return(invisible(FALSE))
@@ -120,7 +125,8 @@
       pkg,
       restore,
       biocmanager_install,
-      is_bioc = (source == "Bioconductor")
+      is_bioc = (source == "Bioconductor"),
+      project = project
     )
   } else {
     action <- if (restore) "restoring" else "installing"
@@ -129,7 +135,7 @@
 }
 
 # Internal function to restore or update packages
-.renv_restore_update_actual <- function(pkg, restore, biocmanager_install, is_bioc) {
+.renv_restore_update_actual <- function(pkg, restore, biocmanager_install, is_bioc, project = NULL) {
   if (length(pkg) == 0L) {
     return(invisible(FALSE))
   }
@@ -147,13 +153,24 @@
   # Extract package names from possible remotes
   pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
 
+  # Determine library path for renv operations
+  library_path <- NULL
+  if (!is.null(project)) {
+    library_path <- renv:::renv_paths_library(project = project)
+  }
+
   if (restore) {
     cli::cli_alert_info(
       "Attempting to restore {pkg_type} packages: {.pkg {pkg_names}}"
     )
     # Attempt to restore packages
     tryCatch(
-      renv::restore(packages = pkg_names, transactional = FALSE),
+      renv::restore(
+        packages = pkg_names,
+        transactional = FALSE,
+        project = project,
+        library = library_path
+      ),
       error = function(e) {
         cli::cli_alert_danger(
           "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}. Error: {e$message}"
@@ -161,23 +178,23 @@
       }
     )
     cli::cli_alert_info("Checking for packages that failed to restore.")
-    .renv_restore_remaining(pkg_names)
+    .renv_restore_remaining(pkg_names, project = project, library = library_path)
   } else {
     cli::cli_alert_info(
       "Installing latest {pkg_type} packages: {.pkg {pkg_names}}"
     )
     # Install the latest versions
-    .renv_install(pkg, biocmanager_install, is_bioc)
+    .renv_install(pkg, biocmanager_install, is_bioc, project = project)
   }
 
   cli::cli_alert_info("Checking for packages that are still not installed.")
   # Install any remaining packages that were not installed
-  .renv_install_remaining(pkg, biocmanager_install, is_bioc)
+  .renv_install_remaining(pkg, biocmanager_install, is_bioc, project = project)
   invisible(TRUE)
 }
 
 # Internal function to restore remaining packages individually
-.renv_restore_remaining <- function(pkg) {
+.renv_restore_remaining <- function(pkg, project = NULL, library = NULL) {
   .ensure_cli()
 
   installed_pkgs <- rownames(installed.packages())
@@ -196,7 +213,12 @@
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
       tryCatch(
-        renv::restore(packages = x, transactional = FALSE),
+        renv::restore(
+          packages = x,
+          transactional = FALSE,
+          project = project,
+          library = library
+        ),
         error = function(e) {
           cli::cli_alert_danger(
             "Failed to restore package: {.pkg {x}}. Error: {e$message}"
@@ -208,7 +230,7 @@
 }
 
 # Internal function to install packages
-.renv_install <- function(pkg, biocmanager_install, is_bioc) {
+.renv_install <- function(pkg, biocmanager_install, is_bioc, project = NULL) {
   .ensure_cli()
 
   if (is_bioc) {
@@ -221,7 +243,7 @@
           "Installing Bioconductor packages using renv: {.pkg {pkg}}"
         )
         tryCatch(
-          renv::install(paste0("bioc::", pkg), prompt = FALSE),
+          renv::install(paste0("bioc::", pkg), prompt = FALSE, project = project),
           error = function(e) {
             cli::cli_alert_danger(
               "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
@@ -246,7 +268,7 @@
         "Installing Bioconductor packages using renv: {.pkg {pkg}}"
       )
       tryCatch(
-        renv::install(paste0("bioc::", pkg), prompt = FALSE),
+        renv::install(paste0("bioc::", pkg), prompt = FALSE, project = project),
         error = function(e) {
           cli::cli_alert_danger(
             "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
@@ -257,7 +279,7 @@
   } else {
     cli::cli_alert_info("Installing packages: {.pkg {pkg}}")
     tryCatch(
-      renv::install(pkg, prompt = FALSE),
+      renv::install(pkg, prompt = FALSE, project = project),
       error = function(e) {
         cli::cli_alert_danger(
           "Failed to install packages: {.pkg {pkg}}. Error: {e$message}"
@@ -268,7 +290,7 @@
 }
 
 # Internal function to install any remaining packages
-.renv_install_remaining <- function(pkg, biocmanager_install, is_bioc) {
+.renv_install_remaining <- function(pkg, biocmanager_install, is_bioc, project = NULL) {
   .ensure_cli()
 
   installed_pkgs <- rownames(installed.packages())
@@ -287,7 +309,7 @@
   cli::cli_alert_info("Attempting to install remaining packages.")
 
   # Attempt to install remaining packages
-  .renv_install(pkg_remaining, biocmanager_install, is_bioc)
+  .renv_install(pkg_remaining, biocmanager_install, is_bioc, project = project)
 
   # Check again for any packages that failed to install
   pkg_still_missing <- pkg_remaining[
@@ -309,7 +331,7 @@
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
     if (!requireNamespace(sub("^.*/", "", x), quietly = TRUE)) {
-      .renv_install(x, biocmanager_install, is_bioc)
+      .renv_install(x, biocmanager_install, is_bioc, project = project)
     }
   }
 

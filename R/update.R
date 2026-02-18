@@ -13,6 +13,9 @@
 #'   `BiocManager::install`; otherwise,
 #'   `renv::install("bioc::<package_name>")` will be used.
 #'   Default is `FALSE`.
+#' @param project The project directory. If `NULL`, defaults to the current
+#'   working directory. When specified, packages will be installed to the
+#'   project's renv library even if renv is not activated.
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
@@ -23,14 +26,23 @@
 #'
 #' # Only update GitHub packages
 #' renvvv_update(non_github = FALSE)
+#'
+#' # Update packages in a specific project without activating renv
+#' renvvv_update(project = "/path/to/project")
 #' }
 #'
 #' @export
 renvvv_update <- function(github = TRUE,
                               non_github = TRUE,
-                              biocmanager_install = FALSE) {
+                              biocmanager_install = FALSE,
+                              project = NULL) {
   .check_renv()
   .ensure_cli()
+
+  # Default to current working directory if not specified
+  if (is.null(project)) {
+    project <- getwd()
+  }
 
   cli::cli_h1("Starting renv environment update")
 
@@ -40,7 +52,8 @@ renvvv_update <- function(github = TRUE,
     non_github = non_github,
     github = github,
     restore = FALSE,
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    project = project
   )
   cli::cli_h1("renv environment update completed")
   invisible(TRUE)

@@ -7,7 +7,8 @@
 renvvv_restore_and_update(
   github = TRUE,
   non_github = TRUE,
-  biocmanager_install = FALSE
+  biocmanager_install = FALSE,
+  project = NULL
 )
 }
 \arguments{
@@ -21,6 +22,10 @@ If \code{TRUE}, Bioconductor packages will be installed using
 \code{BiocManager::install}; otherwise,
 \code{renv::install("bioc::<package_name>")} will be used.
 Default is \code{FALSE}.}
+
+\item{project}{The project directory. If \code{NULL}, defaults to the current
+working directory. When specified, packages will be installed to the
+project's renv library even if renv is not activated.}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -33,6 +38,9 @@ versions. Combines \code{renvvv_restore()} and \code{renvvv_update()} in sequenc
 \dontrun{
 # Restore and then update all packages
 renvvv_restore_and_update()
+
+# Restore and update in a specific project without activating renv
+renvvv_restore_and_update(project = "/path/to/project")
 }
 
 }
