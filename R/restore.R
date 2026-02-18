@@ -5,6 +5,11 @@
 #' versions. When individual packages fail, continues with the remaining
 #' packages and retries failures individually.
 #'
+#' If an renv project is detected (via `renv.lock` file) but not currently
+#' active, the function will activate it. In interactive sessions, the user
+#' will be prompted for confirmation before activation. In non-interactive
+#' sessions, activation occurs automatically.
+#'
 #' @param github Logical. Whether to process GitHub packages. Default is `TRUE`.
 #' @param non_github Logical. Whether to process non-GitHub packages
 #'   (CRAN and Bioconductor). Default is `TRUE`.
@@ -31,6 +36,7 @@ renvvv_restore <- function(github = TRUE,
                                biocmanager_install = FALSE) {
   .check_renv()
   .ensure_cli()
+  .check_renv_activation()
 
   cli::cli_h1("Starting renv environment restoration")
 

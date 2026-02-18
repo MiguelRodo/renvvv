@@ -23,6 +23,11 @@ Invisibly returns \code{TRUE} upon successful completion.
 Adds \verb{library(<pkg>)} calls for each package listed to the
 \verb{_dependencies.R} file.
 Installs packages if they are not already installed.
+
+If an renv project is detected (via \code{renv.lock} file) but not currently
+active, the function will activate it. In interactive sessions, the user
+will be prompted for confirmation before activation. In non-interactive
+sessions, activation occurs automatically.
 }
 \examples{
 \dontrun{

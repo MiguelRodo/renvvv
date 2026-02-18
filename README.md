@@ -40,6 +40,20 @@ All three functions handle CRAN, Bioconductor, and GitHub packages. Use
 the `github` and `non_github` arguments to control which sources to
 process.
 
+### Automatic renv Project Activation
+
+renvvv functions automatically detect and activate renv projects to
+ensure consistent behavior:
+
+- **Interactive sessions**: You'll be prompted to activate the project
+  if a `renv.lock` file is detected but the project isn't currently
+  active.
+- **Non-interactive sessions**: The project is activated automatically
+  without prompting.
+
+This ensures that package operations run in the correct environment,
+especially important for new setups or when switching between projects.
+
 ### Other Utilities
 
 ``` r

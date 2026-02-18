@@ -25,6 +25,11 @@ Invisibly returns \code{TRUE} upon successful completion.
 Updates packages to their latest available versions, ignoring the lockfile
 versions. When individual packages fail, continues with the remaining
 packages and retries failures individually.
+
+If an renv project is detected (via \code{renv.lock} file) but not currently
+active, the function will activate it. In interactive sessions, the user
+will be prompted for confirmation before activation. In non-interactive
+sessions, activation occurs automatically.
 }
 \examples{
 \dontrun{
