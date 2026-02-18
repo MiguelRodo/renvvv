@@ -46,8 +46,7 @@ process.
 # Add packages to _dependencies.R and install them
 renvvv_dep_add(c("dplyr", "ggplot2"))
 
-# HPC (SLURM) setup helpers
-renvvv_hpc_renv_setup()
+# Repository setup helper
 renvvv_renv_repos_setup()
 ```
 

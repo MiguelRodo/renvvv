@@ -93,47 +93,6 @@ test_that("renvvv_dep_add handles read-only _dependencies.R", {
   )
 })
 
-# Test renvvv_hpc_renv_setup edge cases
-test_that("renvvv_hpc_renv_setup handles existing scripts directory", {
-  temp_dir <- tempdir()
-  old_wd <- getwd()
-  on.exit({
-    setwd(old_wd)
-    unlink(file.path(temp_dir, ".Rprofile"))
-    unlink(file.path(temp_dir, "scripts"), recursive = TRUE)
-  })
-  setwd(temp_dir)
-
-  # Create scripts/R directory first
-  dir.create(file.path("scripts", "R"), recursive = TRUE)
-
-  result <- renvvv_hpc_renv_setup(force = TRUE)
-
-  expect_true(result)
-  expect_true(file.exists(".Rprofile"))
-})
-
-test_that("renvvv_hpc_renv_setup handles existing hpc_renv_setup.R", {
-  temp_dir <- tempdir()
-  old_wd <- getwd()
-  on.exit({
-    setwd(old_wd)
-    unlink(file.path(temp_dir, ".Rprofile"))
-    unlink(file.path(temp_dir, "scripts"), recursive = TRUE)
-  })
-  setwd(temp_dir)
-
-  # Create scripts/R directory and file
-  dir.create(file.path("scripts", "R"), recursive = TRUE)
-  writeLines("# Existing script", file.path("scripts", "R", "hpc_renv_setup.R"))
-
-  result <- renvvv_hpc_renv_setup(force = TRUE)
-
-  expect_true(result)
-  # File should be overwritten
-  expect_true(file.exists(file.path("scripts", "R", "hpc_renv_setup.R")))
-})
-
 # Test renvvv_renv_repos_setup edge cases
 test_that("renvvv_renv_repos_setup handles existing scripts directory", {
   temp_dir <- tempdir()
@@ -173,29 +132,6 @@ test_that("renvvv_renv_repos_setup handles existing renv_repos.R", {
   expect_true(result)
   # File should be overwritten
   expect_true(file.exists(file.path("scripts", "R", "renv_repos.R")))
-})
-
-
-
-# Test with malformed .Rprofile
-test_that("renvvv_hpc_renv_setup handles malformed .Rprofile", {
-  temp_dir <- tempdir()
-  old_wd <- getwd()
-  on.exit({
-    setwd(old_wd)
-    unlink(file.path(temp_dir, ".Rprofile"))
-    unlink(file.path(temp_dir, "scripts"), recursive = TRUE)
-  })
-  setwd(temp_dir)
-
-  # Create .Rprofile with incomplete lines
-  writeLines(c("# Comment", "library("), ".Rprofile")
-
-  # Should still complete successfully
-  result <- renvvv_hpc_renv_setup(force = TRUE)
-
-  expect_true(result)
-  expect_true(file.exists(".Rprofile"))
 })
 
 # Test concurrent file access

@@ -23,58 +23,6 @@
   }
 }
 
-#' @title Make .Rprofile source script to make renv use scratch directory
-#'
-#' @param force Logical. If `FALSE` (default), prompts for confirmation in
-#'   interactive sessions or errors in non-interactive sessions. Set to `TRUE`
-#'   to proceed without prompting.
-#'
-#' @return Invisibly returns `TRUE` upon successful completion.
-#'
-#' @examples
-#' \dontrun{
-#' # Interactive mode will prompt for confirmation
-#' renvvv_hpc_renv_setup()
-#'
-#' # Non-interactive mode requires force = TRUE
-#' renvvv_hpc_renv_setup(force = TRUE)
-#' }
-#'
-#' @export
-renvvv_hpc_renv_setup <- function(force = FALSE) {
-  .check_write_permission(
-    force,
-    "This will create/modify .Rprofile and create scripts/R/hpc_renv_setup.R."
-  )
-  if (!file.exists(".Rprofile")) {
-    file.create(".Rprofile")
-  }
-  txt_rprofile <- readLines(".Rprofile")
-  txt_rprofile <- c(
-    txt_rprofile,
-    "\n# make renv use scratch directory",
-    'slurm_ind <- any(grepl("^SLURM_", names(Sys.getenv())))',
-    'dir_exists_ind <- dir.exists(file.path("/scratch/", Sys.getenv("USER")))',
-    "if (slurm_ind && dir_exists_ind) {",
-    '  source("./scripts/R/hpc_renv_setup.R")',
-    "}"
-  )
-  writeLines(txt_rprofile, ".Rprofile")
-  if (!dir.exists(file.path("scripts", "R"))) {
-    dir.create(file.path("scripts", "R"), recursive = TRUE)
-  }
-  file.copy(
-    system.file("scripts", "hpc_renv_setup.R", package = "renvvv"),
-    "scripts/R/hpc_renv_setup.R"
-  )
-  slurm_ind <- any(grepl("^SLURM_", names(Sys.getenv())))
-  dir_exists_ind <- dir.exists(file.path("/scratch/", Sys.getenv("USER")))
-  if (slurm_ind && dir_exists_ind) {
-    source("./scripts/R/hpc_renv_setup.R")
-  }
-  invisible(TRUE)
-}
-
 #' @title Make .Rprofile source script to make renv use right repos
 #'
 #' @description Copied from
