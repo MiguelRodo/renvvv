@@ -1,7 +1,7 @@
-test_that("setup_hpc_renv function exists", {
-  expect_true(is.function(setup_hpc_renv))
+test_that("renvvv_hpc_renv_setup function exists", {
+  expect_true(is.function(renvvv_hpc_renv_setup))
 })
 
-test_that("setup_renv_repos function exists", {
-  expect_true(is.function(setup_renv_repos))
+test_that("renvvv_renv_repos_setup function exists", {
+  expect_true(is.function(renvvv_renv_repos_setup))
 })

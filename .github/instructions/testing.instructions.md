@@ -30,18 +30,18 @@ R/rprofile.R     -> tests/testthat/test-rprofile.R
 
 ```r
 # ✅ Correct
-test_that("renv_restore function exists", {
-  expect_true(is.function(renv_restore))
+test_that("renvvv_restore function exists", {
+  expect_true(is.function(renvvv_restore))
 })
 
-test_that("renv_update function exists", {
-  expect_true(is.function(renv_update))
+test_that("renvvv_update function exists", {
+  expect_true(is.function(renvvv_update))
 })
 
 # ❌ Incorrect - testing multiple things
 test_that("functions work", {
-  expect_true(is.function(renv_restore))
-  expect_true(is.function(renv_update))
+  expect_true(is.function(renvvv_restore))
+  expect_true(is.function(renvvv_update))
   expect_equal(result, expected)
 })
 ```
@@ -56,8 +56,8 @@ test_that("functions work", {
 - Verify internal helper functions exist
 
 ```r
-test_that("renv_dep_add function exists", {
-  expect_true(is.function(renv_dep_add))
+test_that("renvvv_dep_add function exists", {
+  expect_true(is.function(renvvv_dep_add))
 })
 
 test_that(".ensure_cli helper exists", {

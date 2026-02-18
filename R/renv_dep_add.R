@@ -27,15 +27,15 @@
 #' @examples
 #' \dontrun{
 #' # Add and install CRAN packages
-#' renv_dep_add(c("dplyr", "ggplot2"))
+#' renvvv_dep_add(c("dplyr", "ggplot2"))
 #'
 #' # Add and install a GitHub package
-#' renv_dep_add("hadley/httr")
+#' renvvv_dep_add("hadley/httr")
 #' }
 #'
 #' @importFrom utils installed.packages
 #' @export
-renv_dep_add <- function(pkg) {
+renvvv_dep_add <- function(pkg) {
   # Ensure the cli package is available
   .ensure_cli()
 
@@ -97,9 +97,9 @@ renv_dep_add <- function(pkg) {
 #' @description
 #' Functions to manage the restoration and updating of packages specified in the `renv` lockfile.
 #'
-#' - `renv_restore()`: Restores packages from the lockfile, attempting to install the lockfile versions.
-#' - `renv_update()`: Updates packages to their latest available versions, ignoring the lockfile versions.
-#' - `renv_restore_and_update()`: First restores packages from the lockfile, then updates them to the latest versions.
+#' - `renvvv_restore()`: Restores packages from the lockfile, attempting to install the lockfile versions.
+#' - `renvvv_update()`: Updates packages to their latest available versions, ignoring the lockfile versions.
+#' - `renvvv_restore_and_update()`: First restores packages from the lockfile, then updates them to the latest versions.
 #'
 #' @details
 #' Control whether to process GitHub packages, non-GitHub packages (CRAN and Bioconductor), or both using the `github` and `non_github` arguments.
@@ -116,24 +116,24 @@ renv_dep_add <- function(pkg) {
 #' @examples
 #' \dontrun{
 #' # Restore all packages
-#' renv_restore()
+#' renvvv_restore()
 #'
 #' # Update all packages
-#' renv_update()
+#' renvvv_update()
 #'
 #' # Restore and then update all packages
-#' renv_restore_and_update()
+#' renvvv_restore_and_update()
 #'
 #' # Only restore non-GitHub packages
-#' renv_restore(github = FALSE)
+#' renvvv_restore(github = FALSE)
 #'
 #' # Only update GitHub packages
-#' renv_update(non_github = FALSE)
+#' renvvv_update(non_github = FALSE)
 #' }
 #'
 #' @export
-#' @rdname renv_restore
-renv_restore <- function(github = TRUE,
+#' @rdname renvvv_restore
+renvvv_restore <- function(github = TRUE,
                                non_github = TRUE,
                                biocmanager_install = FALSE) {
   .check_renv()
@@ -154,8 +154,8 @@ renv_restore <- function(github = TRUE,
 }
 
 #' @export
-#' @rdname renv_restore
-renv_update <- function(github = TRUE,
+#' @rdname renvvv_restore
+renvvv_update <- function(github = TRUE,
                               non_github = TRUE,
                               biocmanager_install = FALSE) {
   .check_renv()
@@ -176,12 +176,12 @@ renv_update <- function(github = TRUE,
 }
 
 #' @export
-#' @rdname renv_restore
-renv_restore_and_update <- function(github = TRUE,
+#' @rdname renvvv_restore
+renvvv_restore_and_update <- function(github = TRUE,
                                           non_github = TRUE,
                                           biocmanager_install = FALSE) {
-  renv_restore(github, non_github, biocmanager_install)
-  renv_update(github, non_github, biocmanager_install)
+  renvvv_restore(github, non_github, biocmanager_install)
+  renvvv_update(github, non_github, biocmanager_install)
 }
 
 # Internal function to get package lists from the renv lockfile

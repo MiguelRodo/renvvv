@@ -1,7 +1,7 @@
 #' @title Make .Rprofile source script to make renv use scratch directory
 #'
 #' @export
-setup_hpc_renv <- function() {
+renvvv_hpc_renv_setup <- function() {
   if (!file.exists(".Rprofile")) {
     file.create(".Rprofile")
   }
@@ -37,7 +37,7 @@ setup_hpc_renv <- function() {
 #' \url{https://github.com/rstudio/renv/issues/1052#issuecomment-1342567839}.
 #'
 #' @export
-setup_renv_repos <- function() {
+renvvv_renv_repos_setup <- function() {
   if (!file.exists(".Rprofile")) {
     file.create(".Rprofile")
   }

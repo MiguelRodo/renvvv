@@ -41,19 +41,19 @@ The primary functionality of this package is robust `renv` restoration and manag
 library(renvvv)
 
 # Restore packages from renv lockfile (recommended)
-renv_restore()
+renvvv_restore()
 
 # Update packages to latest versions
-renv_update()
+renvvv_update()
 
 # Restore then update all packages
-renv_restore_and_update()
+renvvv_restore_and_update()
 
 # Add packages to _dependencies.R and install them
-renv_dep_add(c("dplyr", "ggplot2"))
+renvvv_dep_add(c("dplyr", "ggplot2"))
 ```
 
-The `renv_restore()` function handles CRAN, Bioconductor, and GitHub packages with automatic fallback for packages that fail to restore.
+The `renvvv_restore()` function handles CRAN, Bioconductor, and GitHub packages with automatic fallback for packages that fail to restore.
 
 ### HPC Setup
 
@@ -61,10 +61,10 @@ Configure your project for HPC (SLURM) environments:
 
 ```r
 # Set up .Rprofile to use scratch directory for renv on HPC
-setup_hpc_renv()
+renvvv_hpc_renv_setup()
 
 # Configure renv to use correct repositories across different OSs
-setup_renv_repos()
+renvvv_renv_repos_setup()
 ```
 
 ## License

@@ -623,26 +623,26 @@ restoration and management:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(renvvv)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># Restore packages from renv lockfile (recommended)</span></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">renv_restore</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">renvvv_restore</span>()</span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
 <span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co"># Update packages to latest versions</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">renv_update</span>()</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">renvvv_update</span>()</span>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a></span>
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># Restore then update all packages</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">renv_restore_and_update</span>()</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">renvvv_restore_and_update</span>()</span>
 <span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
 <span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co"># Add packages to _dependencies.R and install them</span></span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">renv_dep_add</span>(<span class="fu">c</span>(<span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;ggplot2&quot;</span>))</span></code></pre></div>
-<p>The <code>renv_restore()</code> function handles CRAN, Bioconductor,
-and GitHub packages with automatic fallback for packages that fail to
-restore.</p>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">renvvv_dep_add</span>(<span class="fu">c</span>(<span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;ggplot2&quot;</span>))</span></code></pre></div>
+<p>The <code>renvvv_restore()</code> function handles CRAN,
+Bioconductor, and GitHub packages with automatic fallback for packages
+that fail to restore.</p>
 <h3 id="hpc-setup">HPC Setup</h3>
 <p>Configure your project for HPC (SLURM) environments:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Set up .Rprofile to use scratch directory for renv on HPC</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">setup_hpc_renv</span>()</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">renvvv_hpc_renv_setup</span>()</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># Configure renv to use correct repositories across different OSs</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">setup_renv_repos</span>()</span></code></pre></div>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">renvvv_renv_repos_setup</span>()</span></code></pre></div>
 <h2 id="license">License</h2>
 <p>This package is licensed under the MIT License.</p>
 
