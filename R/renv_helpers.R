@@ -72,14 +72,16 @@
                                                github,
                                                non_github,
                                                restore,
-                                               biocmanager_install) {
+                                               biocmanager_install,
+                                               skip = character(0)) {
   # CRAN Packages
   .renv_restore_or_update_actual_wrapper(
     pkg = package_list[["regular"]],
     act = non_github,
     restore = restore,
     source = "CRAN",
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    skip = skip
   )
 
   # Bioconductor Packages
@@ -88,7 +90,8 @@
     act = non_github,
     restore = restore,
     source = "Bioconductor",
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    skip = skip
   )
 
   # GitHub Packages
@@ -97,7 +100,8 @@
     act = github,
     restore = restore,
     source = "GitHub",
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    skip = skip
   )
   invisible(TRUE)
 }
@@ -107,8 +111,24 @@
                                                          act,
                                                          restore,
                                                          source,
-                                                         biocmanager_install) {
-  if (length(pkg) == 0L) {
+                                                         biocmanager_install,
+                                                         skip = character(0)) {
+  # Filter out packages in the skip list
+  # For GitHub packages, extract package name from "user/package" format
+  pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
+  pkg_to_process <- pkg[!pkg_names %in% skip]
+  pkg_skipped <- pkg[pkg_names %in% skip]
+
+  # Report skipped packages
+  if (length(pkg_skipped) > 0L) {
+    skipped_names <- sapply(pkg_skipped, function(x) sub("^.*/", "", x))
+    action <- if (restore) "restoring" else "updating"
+    cli::cli_alert_info(
+      "Skipping {action} {source} packages: {.pkg {skipped_names}}"
+    )
+  }
+
+  if (length(pkg_to_process) == 0L) {
     cli::cli_alert_info("No {source} packages to process.")
     return(invisible(FALSE))
   }
@@ -117,7 +137,7 @@
     action <- if (restore) "Restoring" else "Installing latest"
     cli::cli_alert_info("{action} {source} packages.")
     .renv_restore_update_actual(
-      pkg,
+      pkg_to_process,
       restore,
       biocmanager_install,
       is_bioc = (source == "Bioconductor")

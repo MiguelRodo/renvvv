@@ -4,7 +4,12 @@
 \alias{renvvv_restore}
 \title{Restore renv Lockfile Packages}
 \usage{
-renvvv_restore(github = TRUE, non_github = TRUE, biocmanager_install = FALSE)
+renvvv_restore(
+  github = TRUE,
+  non_github = TRUE,
+  biocmanager_install = FALSE,
+  skip = character(0)
+)
 }
 \arguments{
 \item{github}{Logical. Whether to process GitHub packages. Default is \code{TRUE}.}
@@ -17,6 +22,9 @@ If \code{TRUE}, Bioconductor packages will be installed using
 \code{BiocManager::install}; otherwise,
 \code{renv::install("bioc::<package_name>")} will be used.
 Default is \code{FALSE}.}
+
+\item{skip}{Character vector. Package names to skip during restore.
+Default is \code{character(0)} (no packages skipped).}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -33,6 +41,9 @@ renvvv_restore()
 
 # Only restore non-GitHub packages
 renvvv_restore(github = FALSE)
+
+# Skip specific packages
+renvvv_restore(skip = c("dplyr", "ggplot2"))
 }
 
 }

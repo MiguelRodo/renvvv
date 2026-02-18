@@ -135,3 +135,57 @@ test_that("renvvv_restore_and_update handles corrupted lockfile with invalid pac
     nzchar(system.file(package = "corruptedpkg", lib.loc = .libPaths()[1]))
   )
 })
+
+test_that("renvvv_restore_and_update skips packages specified in skip parameter", {
+  skip_on_cran()
+  skip_if_not(
+    requireNamespace("renv", quietly = TRUE),
+    "renv not available"
+  )
+
+  ctx <- .setup_renv_project(pkgs = c("tinytest", "R6"))
+  on.exit(.teardown_renv_project(ctx), add = TRUE)
+
+  # Install old versions of both packages
+  old_tinytest_version <- "1.3.1"
+  old_r6_version <- "2.5.0"
+
+  renv::install(paste0("tinytest@", old_tinytest_version), prompt = FALSE)
+  renv::install(paste0("R6@", old_r6_version), prompt = FALSE)
+
+  # Snapshot to create a lockfile
+  renv::snapshot(packages = c("tinytest", "R6"), confirm = FALSE)
+
+  # Remove both packages
+  .remove_pkg("tinytest")
+  .remove_pkg("R6")
+  expect_false(
+    nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
+  )
+  expect_false(
+    nzchar(system.file(package = "R6", lib.loc = .libPaths()[1]))
+  )
+
+  # Run renvvv_restore_and_update with skip parameter for tinytest
+  suppressMessages(
+    renvvv_restore_and_update(
+      non_github = TRUE,
+      github = FALSE,
+      skip = "tinytest"
+    )
+  )
+
+  # Verify tinytest was NOT restored (was skipped)
+  expect_false(
+    nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
+  )
+
+  # Verify R6 was restored and updated
+  expect_true(
+    nzchar(system.file(package = "R6", lib.loc = .libPaths()[1]))
+  )
+  r6_after <- as.character(packageVersion("R6"))
+  expect_true(
+    numeric_version(r6_after) >= numeric_version(old_r6_version)
+  )
+})

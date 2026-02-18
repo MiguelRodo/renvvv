@@ -7,7 +7,8 @@
 renvvv_restore_and_update(
   github = TRUE,
   non_github = TRUE,
-  biocmanager_install = FALSE
+  biocmanager_install = FALSE,
+  skip = character(0)
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ If \code{TRUE}, Bioconductor packages will be installed using
 \code{BiocManager::install}; otherwise,
 \code{renv::install("bioc::<package_name>")} will be used.
 Default is \code{FALSE}.}
+
+\item{skip}{Character vector. Package names to skip during restore and update.
+Default is \code{character(0)} (no packages skipped).}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -33,6 +37,9 @@ versions. Combines \code{renvvv_restore()} and \code{renvvv_update()} in sequenc
 \dontrun{
 # Restore and then update all packages
 renvvv_restore_and_update()
+
+# Skip specific packages
+renvvv_restore_and_update(skip = c("dplyr", "ggplot2"))
 }
 
 }

@@ -109,3 +109,45 @@ test_that("renvvv_update handles corrupted lockfile with invalid package version
     nzchar(system.file(package = "corruptedpkg", lib.loc = .libPaths()[1]))
   )
 })
+
+test_that("renvvv_update skips packages specified in skip parameter", {
+  skip_on_cran()
+  skip_if_not(
+    requireNamespace("renv", quietly = TRUE),
+    "renv not available"
+  )
+
+  ctx <- .setup_renv_project(pkgs = c("tinytest", "R6"))
+  on.exit(.teardown_renv_project(ctx), add = TRUE)
+
+  # Install old versions of both packages
+  old_tinytest_version <- "1.3.1"
+  old_r6_version <- "2.5.0"
+
+  renv::install(paste0("tinytest@", old_tinytest_version), prompt = FALSE)
+  renv::install(paste0("R6@", old_r6_version), prompt = FALSE)
+
+  tinytest_installed <- as.character(packageVersion("tinytest"))
+  r6_installed <- as.character(packageVersion("R6"))
+
+  expect_equal(tinytest_installed, old_tinytest_version)
+  expect_equal(r6_installed, old_r6_version)
+
+  # Snapshot to create a lockfile
+  renv::snapshot(packages = c("tinytest", "R6"), confirm = FALSE)
+
+  # Run renvvv_update with skip parameter for tinytest
+  suppressMessages(
+    renvvv_update(non_github = TRUE, github = FALSE, skip = "tinytest")
+  )
+
+  # Verify tinytest stayed at old version (was skipped)
+  tinytest_after <- as.character(packageVersion("tinytest"))
+  expect_equal(tinytest_after, old_tinytest_version)
+
+  # Verify R6 was updated (version should be >= old version)
+  r6_after <- as.character(packageVersion("R6"))
+  expect_true(
+    numeric_version(r6_after) >= numeric_version(old_r6_version)
+  )
+})

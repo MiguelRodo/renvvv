@@ -13,6 +13,8 @@
 #'   `BiocManager::install`; otherwise,
 #'   `renv::install("bioc::<package_name>")` will be used.
 #'   Default is `FALSE`.
+#' @param skip Character vector. Package names to skip during update.
+#'   Default is `character(0)` (no packages skipped).
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
@@ -23,12 +25,16 @@
 #'
 #' # Only update GitHub packages
 #' renvvv_update(non_github = FALSE)
+#'
+#' # Skip specific packages
+#' renvvv_update(skip = c("dplyr", "ggplot2"))
 #' }
 #'
 #' @export
 renvvv_update <- function(github = TRUE,
                               non_github = TRUE,
-                              biocmanager_install = FALSE) {
+                              biocmanager_install = FALSE,
+                              skip = character(0)) {
   .check_renv()
   .ensure_cli()
 
@@ -40,7 +46,8 @@ renvvv_update <- function(github = TRUE,
     non_github = non_github,
     github = github,
     restore = FALSE,
-    biocmanager_install = biocmanager_install
+    biocmanager_install = biocmanager_install,
+    skip = skip
   )
   cli::cli_h1("renv environment update completed")
   invisible(TRUE)
