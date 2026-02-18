@@ -143,27 +143,27 @@ test_that("renvvv_restore_and_update skips packages specified in skip parameter"
     "renv not available"
   )
 
-  ctx <- .setup_renv_project(pkgs = c("tinytest", "R6"))
+  ctx <- .setup_renv_project(pkgs = c("tinytest", "mime"))
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Install old versions of both packages
   old_tinytest_version <- "1.3.1"
-  old_r6_version <- "2.5.0"
+  old_mime_version <- "0.12"
 
   renv::install(paste0("tinytest@", old_tinytest_version), prompt = FALSE)
-  renv::install(paste0("R6@", old_r6_version), prompt = FALSE)
+  renv::install(paste0("mime@", old_mime_version), prompt = FALSE)
 
   # Snapshot to create a lockfile
-  renv::snapshot(packages = c("tinytest", "R6"), confirm = FALSE)
+  renv::snapshot(packages = c("tinytest", "mime"), confirm = FALSE)
 
   # Remove both packages
   .remove_pkg("tinytest")
-  .remove_pkg("R6")
+  .remove_pkg("mime")
   expect_false(
     nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
   )
   expect_false(
-    nzchar(system.file(package = "R6", lib.loc = .libPaths()[1]))
+    nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
   )
 
   # Run renvvv_restore_and_update with skip parameter for tinytest
@@ -180,12 +180,12 @@ test_that("renvvv_restore_and_update skips packages specified in skip parameter"
     nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
   )
 
-  # Verify R6 was restored and updated
+  # Verify mime was restored and updated
   expect_true(
-    nzchar(system.file(package = "R6", lib.loc = .libPaths()[1]))
+    nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
   )
-  r6_after <- as.character(packageVersion("R6"))
+  mime_after <- as.character(packageVersion("mime"))
   expect_true(
-    numeric_version(r6_after) >= numeric_version(old_r6_version)
+    numeric_version(mime_after) >= numeric_version(old_mime_version)
   )
 })

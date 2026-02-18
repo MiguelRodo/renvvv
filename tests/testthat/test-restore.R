@@ -129,26 +129,26 @@ test_that("renvvv_restore skips packages specified in skip parameter", {
     "renv not available"
   )
 
-  ctx <- .setup_renv_project(pkgs = c("tinytest", "R6"))
+  ctx <- .setup_renv_project(pkgs = c("tinytest", "mime"))
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Install both packages and snapshot
-  renv::install(c("tinytest", "R6"), prompt = FALSE)
-  renv::snapshot(packages = c("tinytest", "R6"), confirm = FALSE)
+  renv::install(c("tinytest", "mime"), prompt = FALSE)
+  renv::snapshot(packages = c("tinytest", "mime"), confirm = FALSE)
 
   # Verify both are in the lockfile
   lockfile <- renv::lockfile_read()
   expect_true("tinytest" %in% names(lockfile$Packages))
-  expect_true("R6" %in% names(lockfile$Packages))
+  expect_true("mime" %in% names(lockfile$Packages))
 
   # Remove both packages from the project library
   .remove_pkg("tinytest")
-  .remove_pkg("R6")
+  .remove_pkg("mime")
   expect_false(
     nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
   )
   expect_false(
-    nzchar(system.file(package = "R6", lib.loc = .libPaths()[1]))
+    nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
   )
 
   # Run renvvv_restore with skip parameter for tinytest
@@ -156,9 +156,9 @@ test_that("renvvv_restore skips packages specified in skip parameter", {
     renvvv_restore(non_github = TRUE, github = FALSE, skip = "tinytest")
   )
 
-  # Verify R6 is restored but tinytest is not
+  # Verify mime is restored but tinytest is not
   expect_true(
-    nzchar(system.file(package = "R6", lib.loc = .libPaths()[1]))
+    nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
   )
   expect_false(
     nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
