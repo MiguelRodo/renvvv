@@ -30,6 +30,91 @@ test_that(".check_renv returns NULL", {
   expect_null(result)
 })
 
+# Test .renv_paths_lockfile
+test_that(".renv_paths_lockfile function exists", {
+  expect_true(is.function(renvvv:::.renv_paths_lockfile))
+})
+
+test_that(".renv_paths_lockfile returns default path", {
+  # Clear environment variables
+  old_lockfile <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  old_profile <- Sys.getenv("RENV_PROFILE", unset = NA)
+  on.exit({
+    if (!is.na(old_lockfile)) {
+      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile)
+    } else {
+      Sys.unsetenv("RENV_PATHS_LOCKFILE")
+    }
+    if (!is.na(old_profile)) {
+      Sys.setenv(RENV_PROFILE = old_profile)
+    } else {
+      Sys.unsetenv("RENV_PROFILE")
+    }
+  })
+  Sys.unsetenv("RENV_PATHS_LOCKFILE")
+  Sys.unsetenv("RENV_PROFILE")
+
+  result <- renvvv:::.renv_paths_lockfile()
+  expect_equal(result, file.path(getwd(), "renv.lock"))
+})
+
+test_that(".renv_paths_lockfile respects RENV_PATHS_LOCKFILE", {
+  old_lockfile <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  on.exit({
+    if (!is.na(old_lockfile)) {
+      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile)
+    } else {
+      Sys.unsetenv("RENV_PATHS_LOCKFILE")
+    }
+  })
+
+  test_path <- "/custom/path/to/renv.lock"
+  Sys.setenv(RENV_PATHS_LOCKFILE = test_path)
+  result <- renvvv:::.renv_paths_lockfile()
+  expect_equal(result, test_path)
+})
+
+test_that(".renv_paths_lockfile handles directory path with trailing slash", {
+  old_lockfile <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  on.exit({
+    if (!is.na(old_lockfile)) {
+      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile)
+    } else {
+      Sys.unsetenv("RENV_PATHS_LOCKFILE")
+    }
+  })
+
+  test_path <- "/custom/path/"
+  Sys.setenv(RENV_PATHS_LOCKFILE = test_path)
+  result <- renvvv:::.renv_paths_lockfile()
+  expect_equal(result, "/custom/path/renv.lock")
+})
+
+test_that(".renv_paths_lockfile handles RENV_PROFILE", {
+  old_lockfile <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  old_profile <- Sys.getenv("RENV_PROFILE", unset = NA)
+  on.exit({
+    if (!is.na(old_lockfile)) {
+      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile)
+    } else {
+      Sys.unsetenv("RENV_PATHS_LOCKFILE")
+    }
+    if (!is.na(old_profile)) {
+      Sys.setenv(RENV_PROFILE = old_profile)
+    } else {
+      Sys.unsetenv("RENV_PROFILE")
+    }
+  })
+  Sys.unsetenv("RENV_PATHS_LOCKFILE")
+  Sys.setenv(RENV_PROFILE = "test-profile")
+
+  result <- renvvv:::.renv_paths_lockfile()
+  expected <- file.path(
+    getwd(), "renv", "profiles", "test-profile", "renv.lock"
+  )
+  expect_equal(result, expected)
+})
+
 # Test .renv_lockfile_pkg_get (requires a mock lockfile)
 test_that(".renv_lockfile_pkg_get function exists", {
   expect_true(is.function(renvvv:::.renv_lockfile_pkg_get))

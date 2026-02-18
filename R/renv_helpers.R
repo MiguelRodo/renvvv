@@ -1,7 +1,44 @@
+# Internal function to find the renv lockfile path
+# Mimics renv::renv_paths_lockfile() logic without activating the project
+.renv_paths_lockfile <- function(project = NULL) {
+  # Check for environment variable override
+  override <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  if (!is.na(override)) {
+    last <- substr(override, nchar(override), nchar(override))
+    if (last %in% c("/", "\\")) {
+      override <- paste0(override, "renv.lock")
+    }
+    return(override)
+  }
+
+  # Use project directory to construct lockfile path
+  if (is.null(project)) {
+    project <- getwd()
+  }
+
+  # Check for profile
+  profile <- Sys.getenv("RENV_PROFILE", unset = NA)
+  if (!is.na(profile) && profile != "") {
+    # With profile: project/renv/profiles/<name>/renv.lock
+    lockfile_path <- file.path(
+      project, "renv", "profiles", profile, "renv.lock"
+    )
+  } else {
+    # Standard location: project/renv.lock
+    lockfile_path <- file.path(project, "renv.lock")
+  }
+
+  return(lockfile_path)
+}
+
 # Internal function to get package lists from the renv lockfile
 .renv_lockfile_pkg_get <- function() {
-  renv::activate()
-  lockfile_list_pkg <- renv::lockfile_read()$Package
+  # Find lockfile path without activating the project
+  lockfile_path <- .renv_paths_lockfile()
+
+  # Read lockfile directly
+  lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+
   pkg_vec_regular <- character()
   pkg_vec_bioc <- character()
   pkg_vec_gh <- character()
