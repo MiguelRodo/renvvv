@@ -51,6 +51,20 @@ NAMESPACE                 # Auto-generated — DO NOT edit directly
 - No trailing whitespace on any line (including blank lines)
 - Always add a blank line between headings and bullet points
 
+## How renv Finds the Lockfile
+
+(Last updated: 18 Feb 2026)
+
+The `renv` package resolves the lockfile path in the following order:
+
+1. **Environment Variable**: Checks `RENV_PATHS_LOCKFILE`. If set, uses this path directly. If the value ends with `/` or `\`, appends `renv.lock`.
+
+2. **Default Location**: If not set, constructs the path as:
+   - **Without profile**: `project/renv.lock` (where project is `getwd()` by default)
+   - **With profile** (via `RENV_PROFILE`): `project/renv/profiles/<name>/renv.lock`
+
+The package's `.renv_paths_lockfile()` helper mimics this logic to read lockfiles without activating the project (avoiding global state modification).
+
 ## Dependencies
 
 - **Imports** (always available): `renv`, `cli`
