@@ -7,12 +7,16 @@ test_that("renvvv can parse GitHub packages from lockfile", {
     "renv not available"
   )
 
+  # Resolve fixture path to absolute before setup changes working directory
+  fixture_path <- normalizePath(
+    testthat::test_path("fixtures", "renv.lock.praise")
+  )
+
   # Create a test project with a fixture lockfile containing GitHub packages
   ctx <- .setup_renv_project(pkgs = NULL)
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Copy fixture lockfile with GitHub package
-  fixture_path <- testthat::test_path("fixtures", "renv.lock.praise")
   file.copy(fixture_path, "renv.lock", overwrite = TRUE)
 
   # Test that our internal helper can extract GitHub packages
@@ -36,12 +40,16 @@ test_that("renvvv_restore correctly identifies GitHub packages to restore", {
     "renv not available"
   )
 
+  # Resolve fixture path to absolute before setup changes working directory
+  fixture_path <- normalizePath(
+    testthat::test_path("fixtures", "renv.lock.praise")
+  )
+
   # Create a test project with a fixture lockfile
   ctx <- .setup_renv_project(pkgs = NULL)
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Copy fixture lockfile with GitHub package
-  fixture_path <- testthat::test_path("fixtures", "renv.lock.praise")
   file.copy(fixture_path, "renv.lock", overwrite = TRUE)
 
   # Call the internal implementation function to verify it processes correctly
@@ -72,12 +80,16 @@ test_that("renvvv_update correctly identifies GitHub packages to update", {
     "renv not available"
   )
 
+  # Resolve fixture path to absolute before setup changes working directory
+  fixture_path <- normalizePath(
+    testthat::test_path("fixtures", "renv.lock.praise")
+  )
+
   # Create a test project with a fixture lockfile
   ctx <- .setup_renv_project(pkgs = NULL)
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Copy fixture lockfile with GitHub package
-  fixture_path <- testthat::test_path("fixtures", "renv.lock.praise")
   file.copy(fixture_path, "renv.lock", overwrite = TRUE)
 
   # Test the update implementation (without actually installing)
