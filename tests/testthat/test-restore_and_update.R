@@ -135,3 +135,57 @@ test_that("renvvv_restore_and_update handles corrupted lockfile with invalid pac
     nzchar(system.file(package = "corruptedpkg", lib.loc = .libPaths()[1]))
   )
 })
+
+test_that("renvvv_restore_and_update skips packages specified in skip parameter", {
+  skip_on_cran()
+  skip_if_not(
+    requireNamespace("renv", quietly = TRUE),
+    "renv not available"
+  )
+
+  ctx <- .setup_renv_project(pkgs = c("tinytest", "mime"))
+  on.exit(.teardown_renv_project(ctx), add = TRUE)
+
+  # Install old versions of both packages
+  old_tinytest_version <- "1.3.1"
+  old_mime_version <- "0.12"
+
+  renv::install(paste0("tinytest@", old_tinytest_version), prompt = FALSE)
+  renv::install(paste0("mime@", old_mime_version), prompt = FALSE)
+
+  # Snapshot to create a lockfile
+  renv::snapshot(packages = c("tinytest", "mime"), confirm = FALSE)
+
+  # Remove both packages
+  .remove_pkg("tinytest")
+  .remove_pkg("mime")
+  expect_false(
+    nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
+  )
+  expect_false(
+    nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
+  )
+
+  # Run renvvv_restore_and_update with skip parameter for tinytest
+  suppressMessages(
+    renvvv_restore_and_update(
+      non_github = TRUE,
+      github = FALSE,
+      skip = "tinytest"
+    )
+  )
+
+  # Verify tinytest was NOT restored (was skipped)
+  expect_false(
+    nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
+  )
+
+  # Verify mime was restored and updated
+  expect_true(
+    nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
+  )
+  mime_after <- as.character(packageVersion("mime"))
+  expect_true(
+    numeric_version(mime_after) >= numeric_version(old_mime_version)
+  )
+})
