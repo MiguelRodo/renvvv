@@ -55,7 +55,6 @@ NAMESPACE                 # Auto-generated — DO NOT edit directly
 
 - **Imports** (always available): `renv`, `cli`
 - **Suggests** (check before use): `BiocManager`, `rcmdcheck`, `testthat`
-- Environment variable: `RENV_CONFIG_PAK_ENABLED=FALSE` is set in `.Renviron`
 
 ## Environment Setup
 
