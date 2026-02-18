@@ -1,8 +1,8 @@
-# Copilot Instructions for UtilsProjrMR
+# Copilot Instructions for renvvv
 
 ## Overview
 
-UtilsProjrMR is an R package providing utility functions for managing R projects using `renv` for dependency management, with helpers for `projr` workflows, HPC environments, and `targets` pipelines.
+renvvv is an R package providing utility functions for managing R projects using `renv` for dependency management, with specialized tools for HPC environments.
 
 ## Package Structure
 
@@ -21,7 +21,7 @@ UtilsProjrMR is an R package providing utility functions for managing R projects
 
 ## Naming Conventions
 
-- Exported functions: `projr_` prefix (e.g., `projr_renv_restore`)
+- Exported functions: `renvvv_` prefix (e.g., `renvvv_restore`)
 - Internal functions: `.` prefix (e.g., `.ensure_cli`)
 - Test files: `test-<source_file_name>.R`
 

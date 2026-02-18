@@ -3,6 +3,6 @@
 # https://testthat.r-lib.org
 
 library(testthat)
-library(UtilsProjrMR)
+library(renvvv)
 
-test_check("UtilsProjrMR")
+test_check("renvvv")
