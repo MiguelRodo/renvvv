@@ -27,14 +27,14 @@
 #' @examples
 #' \dontrun{
 #' # Add and install CRAN packages
-#' projr_renv_dep_add(c("dplyr", "ggplot2"))
+#' renv_dep_add(c("dplyr", "ggplot2"))
 #'
 #' # Add and install a GitHub package
-#' projr_renv_dep_add("hadley/httr")
+#' renv_dep_add("hadley/httr")
 #' }
 #'
 #' @export
-projr_renv_dep_add <- function(pkg) {
+renv_dep_add <- function(pkg) {
   # Ensure the cli package is available
   .ensure_cli()
 
@@ -96,9 +96,9 @@ projr_renv_dep_add <- function(pkg) {
 #' @description
 #' Functions to manage the restoration and updating of packages specified in the `renv` lockfile.
 #'
-#' - `projr_renv_restore()`: Restores packages from the lockfile, attempting to install the lockfile versions.
-#' - `projr_renv_update()`: Updates packages to their latest available versions, ignoring the lockfile versions.
-#' - `projr_renv_restore_and_update()`: First restores packages from the lockfile, then updates them to the latest versions.
+#' - `renv_restore()`: Restores packages from the lockfile, attempting to install the lockfile versions.
+#' - `renv_update()`: Updates packages to their latest available versions, ignoring the lockfile versions.
+#' - `renv_restore_and_update()`: First restores packages from the lockfile, then updates them to the latest versions.
 #'
 #' @details
 #' Control whether to process GitHub packages, non-GitHub packages (CRAN and Bioconductor), or both using the `github` and `non_github` arguments.
@@ -115,24 +115,24 @@ projr_renv_dep_add <- function(pkg) {
 #' @examples
 #' \dontrun{
 #' # Restore all packages
-#' projr_renv_restore()
+#' renv_restore()
 #'
 #' # Update all packages
-#' projr_renv_update()
+#' renv_update()
 #'
 #' # Restore and then update all packages
-#' projr_renv_restore_and_update()
+#' renv_restore_and_update()
 #'
 #' # Only restore non-GitHub packages
-#' projr_renv_restore(github = FALSE)
+#' renv_restore(github = FALSE)
 #'
 #' # Only update GitHub packages
-#' projr_renv_update(non_github = FALSE)
+#' renv_update(non_github = FALSE)
 #' }
 #'
 #' @export
-#' @rdname projr_renv_restore
-projr_renv_restore <- function(github = TRUE,
+#' @rdname renv_restore
+renv_restore <- function(github = TRUE,
                                non_github = TRUE,
                                biocmanager_install = FALSE) {
   .check_renv()
@@ -140,8 +140,8 @@ projr_renv_restore <- function(github = TRUE,
 
   cli::cli_h1("Starting renv environment restoration")
 
-  package_list <- .projr_renv_lockfile_pkg_get()
-  .projr_renv_restore_or_update_impl(
+  package_list <- .renv_lockfile_pkg_get()
+  .renv_restore_or_update_impl(
     package_list = package_list,
     non_github = non_github,
     github = github,
@@ -153,8 +153,8 @@ projr_renv_restore <- function(github = TRUE,
 }
 
 #' @export
-#' @rdname projr_renv_restore
-projr_renv_update <- function(github = TRUE,
+#' @rdname renv_restore
+renv_update <- function(github = TRUE,
                               non_github = TRUE,
                               biocmanager_install = FALSE) {
   .check_renv()
@@ -162,8 +162,8 @@ projr_renv_update <- function(github = TRUE,
 
   cli::cli_h1("Starting renv environment update")
 
-  package_list <- .projr_renv_lockfile_pkg_get()
-  .projr_renv_restore_or_update_impl(
+  package_list <- .renv_lockfile_pkg_get()
+  .renv_restore_or_update_impl(
     package_list = package_list,
     non_github = non_github,
     github = github,
@@ -175,16 +175,16 @@ projr_renv_update <- function(github = TRUE,
 }
 
 #' @export
-#' @rdname projr_renv_restore
-projr_renv_restore_and_update <- function(github = TRUE,
+#' @rdname renv_restore
+renv_restore_and_update <- function(github = TRUE,
                                           non_github = TRUE,
                                           biocmanager_install = FALSE) {
-  projr_renv_restore(github, non_github, biocmanager_install)
-  projr_renv_update(github, non_github, biocmanager_install)
+  renv_restore(github, non_github, biocmanager_install)
+  renv_update(github, non_github, biocmanager_install)
 }
 
 # Internal function to get package lists from the renv lockfile
-.projr_renv_lockfile_pkg_get <- function() {
+.renv_lockfile_pkg_get <- function() {
   renv::activate()
   lockfile_list_pkg <- renv::lockfile_read()$Package
   pkg_vec_regular <- character()
@@ -216,13 +216,13 @@ projr_renv_restore_and_update <- function(github = TRUE,
 }
 
 # Internal function to manage the restoration or updating process
-.projr_renv_restore_or_update_impl <- function(package_list,
+.renv_restore_or_update_impl <- function(package_list,
                                                github,
                                                non_github,
                                                restore,
                                                biocmanager_install) {
   # CRAN Packages
-  .projr_renv_restore_or_update_actual_wrapper(
+  .renv_restore_or_update_actual_wrapper(
     pkg = package_list[["regular"]],
     act = non_github,
     restore = restore,
@@ -231,7 +231,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
   )
 
   # Bioconductor Packages
-  .projr_renv_restore_or_update_actual_wrapper(
+  .renv_restore_or_update_actual_wrapper(
     pkg = package_list[["bioc"]],
     act = non_github,
     restore = restore,
@@ -240,7 +240,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
   )
 
   # GitHub Packages
-  .projr_renv_restore_or_update_actual_wrapper(
+  .renv_restore_or_update_actual_wrapper(
     pkg = package_list[["gh"]],
     act = github,
     restore = restore,
@@ -251,7 +251,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
 }
 
 # Wrapper function for processing package groups
-.projr_renv_restore_or_update_actual_wrapper <- function(pkg,
+.renv_restore_or_update_actual_wrapper <- function(pkg,
                                                          act,
                                                          restore,
                                                          source,
@@ -264,7 +264,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
   if (act) {
     action <- if (restore) "Restoring" else "Installing latest"
     cli::cli_alert_info("{action} {source} packages.")
-    .projr_renv_restore_update_actual(
+    .renv_restore_update_actual(
       pkg,
       restore,
       biocmanager_install,
@@ -277,7 +277,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
 }
 
 # Internal function to restore or update packages
-.projr_renv_restore_update_actual <- function(pkg, restore, biocmanager_install, is_bioc) {
+.renv_restore_update_actual <- function(pkg, restore, biocmanager_install, is_bioc) {
   if (length(pkg) == 0L) {
     return(invisible(FALSE))
   }
@@ -299,21 +299,21 @@ projr_renv_restore_and_update <- function(github = TRUE,
       }
     )
     cli::cli_alert_info("Checking for packages that failed to restore.")
-    .projr_renv_restore_remaining(pkg_names)
+    .renv_restore_remaining(pkg_names)
   } else {
     cli::cli_alert_info("Installing latest {pkg_type} packages: {.pkg {pkg_names}}")
     # Install the latest versions
-    .projr_renv_install(pkg, biocmanager_install, is_bioc)
+    .renv_install(pkg, biocmanager_install, is_bioc)
   }
 
   cli::cli_alert_info("Checking for packages that are still not installed.")
   # Install any remaining packages that were not installed
-  .projr_renv_install_remaining(pkg, biocmanager_install, is_bioc)
+  .renv_install_remaining(pkg, biocmanager_install, is_bioc)
   invisible(TRUE)
 }
 
 # Internal function to restore remaining packages individually
-.projr_renv_restore_remaining <- function(pkg) {
+.renv_restore_remaining <- function(pkg) {
   .ensure_cli()
 
   installed_pkgs <- rownames(installed.packages())
@@ -340,7 +340,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
 }
 
 # Internal function to install packages
-.projr_renv_install <- function(pkg, biocmanager_install, is_bioc) {
+.renv_install <- function(pkg, biocmanager_install, is_bioc) {
   .ensure_cli()
 
   if (is_bioc) {
@@ -373,7 +373,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
 }
 
 # Internal function to install any remaining packages
-.projr_renv_install_remaining <- function(pkg, biocmanager_install, is_bioc) {
+.renv_install_remaining <- function(pkg, biocmanager_install, is_bioc) {
   .ensure_cli()
 
   installed_pkgs <- rownames(installed.packages())
@@ -390,7 +390,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
   cli::cli_alert_info("Attempting to install remaining packages.")
 
   # Attempt to install remaining packages
-  .projr_renv_install(pkg_remaining, biocmanager_install, is_bioc)
+  .renv_install(pkg_remaining, biocmanager_install, is_bioc)
 
   # Check again for any packages that failed to install
   pkg_still_missing <- pkg_remaining[
@@ -410,7 +410,7 @@ projr_renv_restore_and_update <- function(github = TRUE,
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
     if (!requireNamespace(sub("^.*/", "", x), quietly = TRUE)) {
-      .projr_renv_install(x, biocmanager_install, is_bioc)
+      .renv_install(x, biocmanager_install, is_bioc)
     }
   }
 
