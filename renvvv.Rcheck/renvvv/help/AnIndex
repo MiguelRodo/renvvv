@@ -1,6 +1,0 @@
-renvvv_dep_add	renvvv_dep_add
-renvvv_hpc_renv_setup	renvvv_hpc_renv_setup
-renvvv_renv_repos_setup	renvvv_renv_repos_setup
-renvvv_restore	renvvv_restore
-renvvv_restore_and_update	renvvv_restore
-renvvv_update	renvvv_restore

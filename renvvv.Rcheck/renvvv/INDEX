@@ -1,7 +1,0 @@
-renvvv_dep_add          Add Packages to _dependencies.R for renv
-renvvv_hpc_renv_setup   Make .Rprofile source script to make renv use
-                        scratch directory
-renvvv_renv_repos_setup
-                        Make .Rprofile source script to make renv use
-                        right repos
-renvvv_restore          Restore or Update renv Lockfile Packages
