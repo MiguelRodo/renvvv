@@ -22,7 +22,6 @@ Guidelines for R code style, naming conventions, and documentation in this packa
 # ✅ Correct
 renvvv_restore()
 renvvv_dep_add()
-renvvv_hpc_renv_setup()
 renvvv_renv_repos_setup()
 
 # ❌ Incorrect

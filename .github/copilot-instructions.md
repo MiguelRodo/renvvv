@@ -2,7 +2,7 @@
 
 ## Overview
 
-renvvv is an R package that wraps `renv` to provide more robust package restore and update functions. Standard `renv::restore()` stops on the first error; renvvv catches failures, retries them individually, and reports what couldn't be installed. It also provides helpers for HPC (SLURM) environment configuration.
+renvvv is an R package that wraps `renv` to provide more robust package restore and update functions. Standard `renv::restore()` stops on the first error; renvvv catches failures, retries them individually, and reports what couldn't be installed.
 
 ## Package Structure
 
@@ -13,14 +13,13 @@ R/                        # Source code
   restore.R               # renvvv_restore()
   update.R                # renvvv_update()
   restore_and_update.R    # renvvv_restore_and_update()
-  rprofile.R              # renvvv_hpc_renv_setup(), renvvv_renv_repos_setup()
+  rprofile.R              # renvvv_renv_repos_setup()
 tests/testthat/           # Tests (testthat v3, Config/testthat/edition: 3)
   test-<source_file>.R    # Unit tests matching source files
   test-helpers.R          # Tests for internal helper functions
   test-edge-cases.R       # Edge case and error condition tests
 man/                      # Auto-generated roxygen2 docs — DO NOT edit directly
-inst/scripts/             # Helper scripts copied by HPC setup functions
-  hpc_renv_setup.R        # Sets RENV_PATHS_* for SLURM scratch directories
+inst/scripts/             # Helper scripts copied by setup functions
   renv_repos.R            # Configures RSPM/CRAN repos per OS
 NAMESPACE                 # Auto-generated — DO NOT edit directly
 ```
@@ -33,7 +32,6 @@ NAMESPACE                 # Auto-generated — DO NOT edit directly
 | `renvvv_update()` | Update lockfile packages to latest versions |
 | `renvvv_restore_and_update()` | Restore then update (calls both above in sequence) |
 | `renvvv_dep_add()` | Add `library()` calls to `_dependencies.R` and install packages |
-| `renvvv_hpc_renv_setup()` | Configure `.Rprofile` and scripts for SLURM HPC environments |
 | `renvvv_renv_repos_setup()` | Configure `.Rprofile` and scripts for RSPM/CRAN repo setup |
 
 ## Naming Conventions
