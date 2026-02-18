@@ -4,6 +4,11 @@
 #' First restores packages from the lockfile, then updates them to the latest
 #' versions. Combines `renvvv_restore()` and `renvvv_update()` in sequence.
 #'
+#' If an renv project is detected (via `renv.lock` file) but not currently
+#' active, the function will activate it. In interactive sessions, the user
+#' will be prompted for confirmation before activation. In non-interactive
+#' sessions, activation occurs automatically.
+#'
 #' @param github Logical. Whether to process GitHub packages. Default is `TRUE`.
 #' @param non_github Logical. Whether to process non-GitHub packages
 #'   (CRAN and Bioconductor). Default is `TRUE`.

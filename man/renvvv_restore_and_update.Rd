@@ -28,6 +28,11 @@ Invisibly returns \code{TRUE} upon successful completion.
 \description{
 First restores packages from the lockfile, then updates them to the latest
 versions. Combines \code{renvvv_restore()} and \code{renvvv_update()} in sequence.
+
+If an renv project is detected (via \code{renv.lock} file) but not currently
+active, the function will activate it. In interactive sessions, the user
+will be prompted for confirmation before activation. In non-interactive
+sessions, activation occurs automatically.
 }
 \examples{
 \dontrun{
