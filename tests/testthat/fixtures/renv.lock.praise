@@ -1,0 +1,26 @@
+{
+  "R": {
+    "Version": "4.5.2",
+    "Repositories": [
+      {
+        "Name": "CRAN",
+        "URL": "https://cloud.r-project.org"
+      }
+    ]
+  },
+  "Packages": {
+    "praise": {
+      "Package": "praise",
+      "Version": "1.0.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "praise",
+      "RemoteUsername": "gaborcsardi",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "5c035e0bf3a2fd9274a3f6c75aae575a90b842cf",
+      "Requirements": [],
+      "Hash": "a82ddd4e18a11f949a863959df6a9f52"
+    }
+  }
+}
