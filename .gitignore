@@ -1,0 +1,14 @@
+# R build artifacts
+*.tar.gz
+*.Rcheck/
+..Rcheck/
+
+# R history and workspace
+.Rhistory
+.RData
+.Rproj.user
+
+# Temporary files
+*~
+*.swp
+*.swo
