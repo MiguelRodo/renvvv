@@ -18,8 +18,8 @@ Guidelines for writing and organizing tests in this package using `testthat`.
 - Match source file names in `R/` directory
 
 ```
-R/projr_renv_dep_add.R -> tests/testthat/test-projr_renv_dep_add.R
-R/init_extra.R         -> tests/testthat/test-init_extra.R
+R/renv_dep_add.R -> tests/testthat/test-renv_dep_add.R
+R/rprofile.R     -> tests/testthat/test-rprofile.R
 ```
 
 ### Organization
@@ -30,12 +30,12 @@ R/init_extra.R         -> tests/testthat/test-init_extra.R
 
 ```r
 # ✅ Correct
-test_that("projr_renv_restore function exists", {
-  expect_true(is.function(projr_renv_restore))
+test_that("renv_restore function exists", {
+  expect_true(is.function(renv_restore))
 })
 
-test_that("projr_renv_update function exists", {
-  expect_true(is.function(projr_renv_update))
+test_that("renv_update function exists", {
+  expect_true(is.function(renv_update))
 })
 
 # ❌ Incorrect - testing multiple things
@@ -61,7 +61,7 @@ test_that("projr_renv_dep_add function exists", {
 })
 
 test_that(".ensure_cli helper exists", {
-  expect_true(is.function(UtilsProjrMR:::.ensure_cli))
+  expect_true(is.function(renvvv:::.ensure_cli))
 })
 ```
 

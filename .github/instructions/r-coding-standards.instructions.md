@@ -14,18 +14,21 @@ Guidelines for R code style, naming conventions, and documentation in this packa
 
 ### Exported Functions
 
-- Use `projr_` prefix for all exported functions
+- Use `renv_` prefix for renv-related functions
+- Use `setup_` prefix for setup/configuration functions
 - Use snake_case for function names
 - Be descriptive but concise
 
 ```r
 # ✅ Correct
-projr_renv_restore()
-projr_file_ext_r_fix()
+renv_restore()
+renv_dep_add()
+setup_hpc_renv()
+setup_renv_repos()
 
 # ❌ Incorrect
-renv_restore()
-projrRenvRestore()
+projr_renv_restore()
+renvRestore()
 ```
 
 ### Internal Functions
@@ -90,7 +93,7 @@ helper_check_renv <- function() { ... }
 
 ```r
 # ✅ Correct pattern
-projr_example <- function(pkg) {
+renv_example <- function(pkg) {
   if (!requireNamespace("cli", quietly = TRUE)) {
     stop("The 'cli' package is required.")
   }

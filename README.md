@@ -1,77 +1,65 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# UtilsProjrMR
+# renvvv
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/MiguelRodo/UtilsProjrMR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/MiguelRodo/UtilsProjrMR/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/MiguelRodo/UtilsProjrMR/graph/badge.svg)](https://app.codecov.io/gh/MiguelRodo/UtilsProjrMR)
+
+[![R-CMD-check](https://github.com/MiguelRodo/renvvv/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/MiguelRodo/renvvv/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/MiguelRodo/renvvv/graph/badge.svg)](https://app.codecov.io/gh/MiguelRodo/renvvv)
 <!-- badges: end -->
 
-UtilsProjrMR provides utility functions for managing R projects using [`renv`](https://rstudio.github.io/renv/) for dependency management, with additional helpers for [`projr`](https://github.com/SATVILab/projr) workflows, HPC (SLURM) environments, and [`targets`](https://docs.ropensci.org/targets/) pipelines.
+renvvv provides utility functions for managing R project dependencies
+using [`renv`](https://rstudio.github.io/renv/), with specialized tools
+for HPC environments.
 
 ## Installation
 
-You can install the development version of UtilsProjrMR from [GitHub](https://github.com/) with:
+You can install the development version of renvvv from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("MiguelRodo/UtilsProjrMR")
+devtools::install_github("MiguelRodo/renvvv")
 ```
 
 ## Usage
 
 ### renv Package Management
 
-The primary functionality of this package is robust `renv` restoration and management:
+The primary functionality of this package is robust `renv` restoration
+and management:
 
 ``` r
-library(UtilsProjrMR)
+library(renvvv)
 
 # Restore packages from renv lockfile (recommended)
-projr_renv_restore()
+renv_restore()
 
 # Update packages to latest versions
-projr_renv_update()
+renv_update()
 
 # Restore then update all packages
-projr_renv_restore_and_update()
+renv_restore_and_update()
 
 # Add packages to _dependencies.R and install them
-projr_renv_dep_add(c("dplyr", "ggplot2"))
+renv_dep_add(c("dplyr", "ggplot2"))
 ```
 
-The `projr_renv_restore()` function handles CRAN, Bioconductor, and GitHub packages with automatic fallback for packages that fail to restore.
+The `renv_restore()` function handles CRAN, Bioconductor, and GitHub
+packages with automatic fallback for packages that fail to restore.
 
-### Project Initialization
+### HPC Setup
 
-Configure your project for development with VS Code support:
-
-``` r
-# Set up .Rprofile for development and install useful packages
-projr_init_extra()
-```
-
-### targets Pipeline
-
-Helpers for setting up and managing [`targets`](https://docs.ropensci.org/targets/) pipelines:
+Configure your project for HPC (SLURM) environments:
 
 ``` r
-# Create a new targets pipeline
-projr_tar_pipeline_create("my_analysis")
+# Set up .Rprofile to use scratch directory for renv on HPC
+setup_hpc_renv()
 
-# Activate an existing pipeline
-projr_tar_pipeline_activate("my_analysis")
-```
-
-### File Operations
-
-``` r
-# Fix lowercase .r and .rmd extensions to .R and .Rmd
-projr_file_ext_r_fix()
-
-# Source all R scripts in R/ directory
-projr_source_script_r()
+# Configure renv to use correct repositories across different OSs
+setup_renv_repos()
 ```
 
 ## License

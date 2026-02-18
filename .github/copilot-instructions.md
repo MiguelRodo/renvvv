@@ -1,8 +1,8 @@
-# Copilot Instructions for UtilsProjrMR
+# Copilot Instructions for renvvv
 
 ## Overview
 
-UtilsProjrMR is an R package providing utility functions for managing R projects using `renv` for dependency management, with helpers for `projr` workflows, HPC environments, and `targets` pipelines.
+renvvv is an R package providing utility functions for managing R projects using `renv` for dependency management, with specialized tools for HPC environments.
 
 ## Package Structure
 
