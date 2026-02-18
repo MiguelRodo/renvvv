@@ -4,8 +4,26 @@
 \alias{renvvv_hpc_renv_setup}
 \title{Make .Rprofile source script to make renv use scratch directory}
 \usage{
-renvvv_hpc_renv_setup()
+renvvv_hpc_renv_setup(force = FALSE)
+}
+\arguments{
+\item{force}{Logical. If \code{FALSE} (default), prompts for confirmation in
+interactive sessions or errors in non-interactive sessions. Set to \code{TRUE}
+to proceed without prompting.}
+}
+\value{
+Invisibly returns \code{TRUE} upon successful completion.
 }
 \description{
 Make .Rprofile source script to make renv use scratch directory
+}
+\examples{
+\dontrun{
+# Interactive mode will prompt for confirmation
+renvvv_hpc_renv_setup()
+
+# Non-interactive mode requires force = TRUE
+renvvv_hpc_renv_setup(force = TRUE)
+}
+
 }

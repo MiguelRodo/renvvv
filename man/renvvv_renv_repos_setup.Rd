@@ -4,9 +4,27 @@
 \alias{renvvv_renv_repos_setup}
 \title{Make .Rprofile source script to make renv use right repos}
 \usage{
-renvvv_renv_repos_setup()
+renvvv_renv_repos_setup(force = FALSE)
+}
+\arguments{
+\item{force}{Logical. If \code{FALSE} (default), prompts for confirmation in
+interactive sessions or errors in non-interactive sessions. Set to \code{TRUE}
+to proceed without prompting.}
+}
+\value{
+Invisibly returns \code{TRUE} upon successful completion.
 }
 \description{
 Copied from
 \url{https://github.com/rstudio/renv/issues/1052#issuecomment-1342567839}.
+}
+\examples{
+\dontrun{
+# Interactive mode will prompt for confirmation
+renvvv_renv_repos_setup()
+
+# Non-interactive mode requires force = TRUE
+renvvv_renv_repos_setup(force = TRUE)
+}
+
 }

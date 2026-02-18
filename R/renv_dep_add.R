@@ -12,6 +12,31 @@
   }
 }
 
+# Helper function to check for user permission to write files
+.check_write_permission <- function(force, action_description) {
+  if (!force) {
+    if (interactive()) {
+      msg <- paste0(
+        action_description,
+        "\nDo you want to proceed? (y/n): "
+      )
+      response <- readline(prompt = msg)
+      if (!tolower(trimws(response)) %in% c("y", "yes")) {
+        stop("Operation cancelled by user.", call. = FALSE)
+      }
+    } else {
+      stop(
+        paste0(
+          action_description,
+          "\nThis function requires permission to write files. ",
+          "Use force = TRUE to proceed non-interactively."
+        ),
+        call. = FALSE
+      )
+    }
+  }
+}
+
 #' @title Add Packages to `_dependencies.R` for renv
 #'
 #' @description
@@ -23,23 +48,35 @@
 #'   Packages to add to `_dependencies.R` and install if not already installed.
 #'   Can use the "`<remote>/<repo>`" syntax for installing from remotes
 #'   (e.g., GitHub), provided that `<repo>` is also the name of the package.
+#' @param force Logical. If `FALSE` (default), prompts for confirmation in
+#'   interactive sessions or errors in non-interactive sessions. Set to `TRUE`
+#'   to proceed without prompting.
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
 #' @examples
 #' \dontrun{
-#' # Add and install CRAN packages
+#' # Add and install CRAN packages (interactive mode will prompt)
 #' renvvv_dep_add(c("dplyr", "ggplot2"))
 #'
 #' # Add and install a GitHub package
 #' renvvv_dep_add("hadley/httr")
+#'
+#' # Non-interactive mode requires force = TRUE
+#' renvvv_dep_add(c("dplyr", "ggplot2"), force = TRUE)
 #' }
 #'
 #' @importFrom utils installed.packages
 #' @export
-renvvv_dep_add <- function(pkg) {
+renvvv_dep_add <- function(pkg, force = FALSE) {
   # Ensure the cli package is available
   .ensure_cli()
+
+  # Check for permission to write files
+  .check_write_permission(
+    force,
+    "This will create/modify _dependencies.R and may install packages."
+  )
 
   # Extract package names from possible remotes
   pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
