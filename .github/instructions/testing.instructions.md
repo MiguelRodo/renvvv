@@ -40,8 +40,8 @@ test_that("renv_update function exists", {
 
 # ❌ Incorrect - testing multiple things
 test_that("functions work", {
-  expect_true(is.function(projr_renv_restore))
-  expect_true(is.function(projr_renv_update))
+  expect_true(is.function(renv_restore))
+  expect_true(is.function(renv_update))
   expect_equal(result, expected)
 })
 ```
@@ -56,8 +56,8 @@ test_that("functions work", {
 - Verify internal helper functions exist
 
 ```r
-test_that("projr_renv_dep_add function exists", {
-  expect_true(is.function(projr_renv_dep_add))
+test_that("renv_dep_add function exists", {
+  expect_true(is.function(renv_dep_add))
 })
 
 test_that(".ensure_cli helper exists", {
@@ -93,7 +93,7 @@ test_that("function handles invalid input", {
 devtools::test()
 
 # Run specific test file
-testthat::test_file("tests/testthat/test-projr_renv_dep_add.R")
+testthat::test_file("tests/testthat/test-renv_dep_add.R")
 
 # Run with verbose output
 devtools::test(reporter = "summary")

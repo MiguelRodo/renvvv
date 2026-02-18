@@ -68,7 +68,7 @@ helper_check_renv <- function() { ... }
 #'
 #' @examples
 #' \dontrun{
-#' projr_renv_restore()
+#' renv_restore()
 #' }
 #'
 #' @export
