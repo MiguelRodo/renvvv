@@ -33,6 +33,7 @@
 #' renv_dep_add("hadley/httr")
 #' }
 #'
+#' @importFrom utils installed.packages
 #' @export
 renv_dep_add <- function(pkg) {
   # Ensure the cli package is available
@@ -345,13 +346,24 @@ renv_restore_and_update <- function(github = TRUE,
 
   if (is_bioc) {
     if (biocmanager_install) {
-      cli::cli_alert_info("Installing Bioconductor packages using BiocManager: {.pkg {pkg}}")
-      tryCatch(
-        BiocManager::install(pkg, update = TRUE, ask = FALSE),
-        error = function(e) {
-          cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}. Error: {e$message}")
-        }
-      )
+      if (!requireNamespace("BiocManager", quietly = TRUE)) {
+        cli::cli_alert_warning("BiocManager not installed. Installing Bioconductor packages using renv instead.")
+        cli::cli_alert_info("Installing Bioconductor packages using renv: {.pkg {pkg}}")
+        tryCatch(
+          renv::install(paste0("bioc::", pkg), prompt = FALSE),
+          error = function(e) {
+            cli::cli_alert_danger("Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}")
+          }
+        )
+      } else {
+        cli::cli_alert_info("Installing Bioconductor packages using BiocManager: {.pkg {pkg}}")
+        tryCatch(
+          BiocManager::install(pkg, update = TRUE, ask = FALSE),
+          error = function(e) {
+            cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}. Error: {e$message}")
+          }
+        )
+      }
     } else {
       cli::cli_alert_info("Installing Bioconductor packages using renv: {.pkg {pkg}}")
       tryCatch(
