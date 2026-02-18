@@ -39,11 +39,6 @@ renvvv_update <- function(github = TRUE,
   .check_renv()
   .ensure_cli()
 
-  # Default to current working directory if not specified
-  if (is.null(project)) {
-    project <- getwd()
-  }
-
   cli::cli_h1("Starting renv environment update")
 
   package_list <- .renv_lockfile_pkg_get()

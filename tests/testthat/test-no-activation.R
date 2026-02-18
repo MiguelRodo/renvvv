@@ -126,7 +126,7 @@ test_that("renvvv_restore uses global cache when not activated", {
   )
 })
 
-test_that("renvvv_restore with project=NULL defaults to current directory", {
+test_that("renvvv_restore with explicit project works without activation", {
   skip_on_cran()
   skip_if_not(
     requireNamespace("renv", quietly = TRUE),
@@ -137,15 +137,15 @@ test_that("renvvv_restore with project=NULL defaults to current directory", {
   ctx <- .setup_renv_project_no_activation(pkgs = "tinytest")
   on.exit(.teardown_renv_project_no_activation(ctx), add = TRUE)
 
-  # Already in ctx$dir due to setup
   # Verify current directory is the test project
   expect_equal(getwd(), ctx$dir)
 
-  # Run restore without project parameter (should default to current dir)
+  # Run restore with explicit project parameter (current directory)
   suppressMessages(
     renvvv_restore(
       non_github = TRUE,
-      github = FALSE
+      github = FALSE,
+      project = getwd()
     )
   )
 
