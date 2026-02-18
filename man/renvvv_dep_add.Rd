@@ -9,13 +9,15 @@ renvvv_dep_add(pkg)
 \arguments{
 \item{pkg}{Character vector of package names.
 Packages to add to \verb{_dependencies.R} and install if not already installed.
-Can use the "\verb{<remote>/<repo>}" syntax for installing from remotes (e.g., GitHub), provided that \verb{<repo>} is also the name of the package.}
+Can use the "\verb{<remote>/<repo>}" syntax for installing from remotes
+(e.g., GitHub), provided that \verb{<repo>} is also the name of the package.}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
 }
 \description{
-Adds \verb{library(<pkg>)} calls for each package listed to the \verb{_dependencies.R} file.
+Adds \verb{library(<pkg>)} calls for each package listed to the
+\verb{_dependencies.R} file.
 Installs packages if they are not already installed.
 }
 \examples{

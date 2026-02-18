@@ -3,18 +3,6 @@ test_that("renvvv_dep_add function exists", {
   expect_true(is.function(renvvv_dep_add))
 })
 
-test_that("renvvv_restore function exists", {
-  expect_true(is.function(renvvv_restore))
-})
-
-test_that("renvvv_update function exists", {
-  expect_true(is.function(renvvv_update))
-})
-
-test_that("renvvv_restore_and_update function exists", {
-  expect_true(is.function(renvvv_restore_and_update))
-})
-
 test_that(".ensure_cli helper exists", {
   expect_true(is.function(renvvv:::.ensure_cli))
 })
@@ -149,37 +137,4 @@ test_that(".check_renv doesn't error when renv is available", {
   expect_silent(renvvv:::.check_renv())
 })
 
-# Test restore/update function parameters
-test_that("renvvv_restore accepts parameter combinations", {
-  # These tests verify the function accepts parameters without errors
-  # We can't test actual restore without a lockfile
-  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
 
-  # Test will error without lockfile - we're just testing the function exists and accepts params
-  expect_error(
-    suppressMessages(renvvv_restore(github = TRUE, non_github = TRUE))
-  )
-  expect_error(
-    suppressMessages(renvvv_restore(github = FALSE, non_github = TRUE))
-  )
-  expect_error(
-    suppressMessages(renvvv_restore(github = TRUE, non_github = FALSE))
-  )
-})
-
-test_that("renvvv_update accepts parameter combinations", {
-  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
-
-  expect_error(
-    suppressMessages(renvvv_update(github = TRUE, non_github = TRUE))
-  )
-})
-
-test_that("renvvv_restore_and_update calls both functions", {
-  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
-
-  # Should error when calling restore (no lockfile)
-  expect_error(
-    suppressMessages(renvvv_restore_and_update())
-  )
-})

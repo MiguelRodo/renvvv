@@ -4,13 +4,13 @@ Version: 0.0.7
 Authors@R: 
     person("Miguel", "Rodo", , "rdxmig002@myuct.ac.za", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2036-4878"))
-Description: Utility functions for managing R project dependencies using 'renv',
-    with specialized tools for HPC environments. Provides helpers for package
-    installation, restoration, and configuration.
+Description: More robust 'renv' restore and update functions that continue past
+    individual package failures, retry them individually, and report what could
+    not be installed. Also provides helpers for HPC environment configuration.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports:
     renv,
     cli

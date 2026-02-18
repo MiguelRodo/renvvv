@@ -12,3 +12,7 @@
 *~
 *.swp
 *.swo
+
+# renv artifacts from test runs
+tests/testthat/.Rprofile
+tests/testthat/renv/

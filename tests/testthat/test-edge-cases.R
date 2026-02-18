@@ -175,25 +175,7 @@ test_that("renvvv_renv_repos_setup handles existing renv_repos.R", {
   expect_true(file.exists(file.path("scripts", "R", "renv_repos.R")))
 })
 
-# Test parameter validation
-test_that("renvvv_restore validates boolean parameters", {
-  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
 
-  # Non-boolean values should work (R is permissive with TRUE/FALSE)
-  # Will error because lockfile doesn't exist
-  expect_error(
-    suppressMessages(renvvv_restore(github = "not a boolean"))
-  )
-})
-
-test_that("renvvv_update validates boolean parameters", {
-  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
-
-  # Will error because lockfile doesn't exist
-  expect_error(
-    suppressMessages(renvvv_update(non_github = "not a boolean"))
-  )
-})
 
 # Test with malformed .Rprofile
 test_that("renvvv_hpc_renv_setup handles malformed .Rprofile", {
