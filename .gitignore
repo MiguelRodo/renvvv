@@ -16,3 +16,5 @@
 # renv artifacts from test runs
 tests/testthat/.Rprofile
 tests/testthat/renv/
+/doc/
+/Meta/
