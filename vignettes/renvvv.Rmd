@@ -1,0 +1,186 @@
+---
+title: "Getting Started with renvvv"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with renvvv}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Why renvvv?
+
+Standard `renv::restore()` stops at the first package failure, leaving your environment partially restored. **renvvv** solves this by continuing past failures, retrying them individually, and reporting what couldn't be installed—so you don't lose progress on packages that *can* be restored.
+
+**Key benefits:**
+
+- **Resilient restores**: Continues installing packages even when some fail
+- **Individual retry**: Failed packages are retried one-by-one for better diagnostics
+- **Clear reporting**: See exactly which packages succeeded and which failed
+- **Auto-activation**: Automatically detects and activates renv projects
+
+## Installation
+
+```{r}
+# install.packages("devtools")
+devtools::install_github("MiguelRodo/renvvv")
+```
+
+## Core Workflow
+
+### Restore packages from lockfile
+
+When you clone a project or switch branches, restore packages with:
+
+```{r}
+library(renvvv)
+renvvv_restore()
+```
+
+Unlike `renv::restore()`, this continues through failures and shows you exactly what succeeded and what didn't.
+
+**Control what gets restored:**
+
+```{r}
+# Only restore CRAN/Bioconductor packages (skip GitHub)
+renvvv_restore(github = FALSE)
+
+# Only restore GitHub packages
+renvvv_restore(non_github = FALSE)
+
+# Skip specific packages
+renvvv_restore(skip = c("problematic_pkg"))
+```
+
+### Update packages to latest versions
+
+Update all packages in your lockfile to their latest available versions:
+
+```{r}
+renvvv_update()
+```
+
+This ignores the lockfile versions and installs the newest releases. Same filtering options apply:
+
+```{r}
+# Update only GitHub packages
+renvvv_update(non_github = FALSE)
+
+# Skip certain packages during update
+renvvv_update(skip = c("stable_pkg"))
+```
+
+### Restore then update
+
+Common workflow: restore lockfile versions first, then update:
+
+```{r}
+renvvv_restore_and_update()
+```
+
+This runs `renvvv_restore()` followed by `renvvv_update()`.
+
+## Managing Dependencies
+
+### Add packages and update dependencies file
+
+Add new packages to your `_dependencies.R` file and install them in one step:
+
+```{r}
+renvvv_dep_add(c("dplyr", "ggplot2"))
+```
+
+This:
+
+1. Adds `library(dplyr)` and `library(ggplot2)` to `_dependencies.R`
+2. Installs the packages via `renv::install()`
+3. Creates `_dependencies.R` if it doesn't exist
+
+Useful when you want to track package dependencies in a single file.
+
+### Bioconductor packages
+
+By default, Bioconductor packages are installed via `renv::install("bioc::package")`. To use `BiocManager::install()` instead:
+
+```{r}
+renvvv_restore(biocmanager_install = TRUE)
+renvvv_update(biocmanager_install = TRUE)
+```
+
+## Project Setup
+
+### Configure repository settings
+
+Set up RSPM/CRAN repositories for your project:
+
+```{r}
+renvvv_renv_repos_setup()
+```
+
+This configures `.Rprofile` and helper scripts to ensure correct repositories are used based on your OS.
+
+## Automatic Project Activation
+
+If you're in a directory with `renv.lock` but the project isn't active:
+
+- **Interactive session**: You'll be prompted to activate
+- **Non-interactive session**: Project activates automatically
+
+This ensures operations run in the correct environment without manual intervention.
+
+## Common Scenarios
+
+### Scenario 1: New team member onboarding
+
+```{r}
+# Clone repo, then:
+renvvv_restore()
+# All packages installed, even if a few fail—you can work while debugging failures
+```
+
+### Scenario 2: Updating project dependencies
+
+```{r}
+# Add new packages
+renvvv_dep_add(c("tidyr", "purrr"))
+
+# Update everything to latest versions
+renvvv_update()
+
+# Snapshot the new state
+renv::snapshot()
+```
+
+### Scenario 3: Partial restore for testing
+
+```{r}
+# Only restore CRAN packages quickly for CI
+renvvv_restore(github = FALSE)
+
+# Later, restore GitHub packages if needed
+renvvv_restore(non_github = FALSE)
+```
+
+## Comparison with Base renv
+
+| Task | `renv` | `renvvv` |
+|------|--------|----------|
+| Restore stops on first error | Yes | No—continues and retries |
+| See all failures at once | No | Yes—comprehensive report |
+| Partial restore possible | No | Yes—filter by source |
+| Auto-activation | Manual | Automatic with prompts |
+| Update to latest versions | Manual per package | Batch update all |
+
+## Tips
+
+- Use `skip` parameter to exclude problematic packages during bulk operations
+- Filter by source (`github`/`non_github`) for faster partial restores
+- Check `_dependencies.R` into version control to track package usage
+- Run `renv::snapshot()` after successful `renvvv_update()` to save new versions

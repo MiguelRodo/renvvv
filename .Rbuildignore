@@ -14,3 +14,5 @@
 ^tests/testthat/renv$
 ^tests/testthat/\.Rprofile$
 ^tests/testthat/renv\.lock$
+^doc$
+^Meta$
