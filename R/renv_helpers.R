@@ -33,24 +33,34 @@
 
 # Internal function to get package dependencies from the renv lockfile.
 # Returns a named list mapping each package name to its Requirements vector.
-# Returns an empty list if no lockfile is found.
+# Returns an empty list and warns if dependencies cannot be extracted.
 .renv_lockfile_deps_get <- function() {
-  lockfile_path <- .renv_paths_lockfile()
-  if (!file.exists(lockfile_path)) {
-    return(list())
-  }
-  lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
-  deps <- lapply(lockfile_list_pkg, function(pkg_info) {
-    reqs <- pkg_info$Requirements
-    if (is.null(reqs)) character(0) else as.character(reqs)
+  tryCatch({
+    lockfile_path <- renv::paths$lockfile()
+    if (!file.exists(lockfile_path)) {
+      return(list())
+    }
+    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+    deps <- lapply(lockfile_list_pkg, function(pkg_info) {
+      reqs <- pkg_info$Requirements
+      if (is.null(reqs)) character(0) else as.character(reqs)
+    })
+    deps
+  }, error = function(e) {
+    cli::cli_alert_warning(
+      paste0(
+        "Could not extract package dependencies from lockfile ",
+        "(skip_if_dep_unavailable ignored): {e$message}"
+      )
+    )
+    list()
   })
-  deps
 }
 
 # Internal function to get package lists from the renv lockfile
 .renv_lockfile_pkg_get <- function() {
-  # Find lockfile path without activating the project
-  lockfile_path <- .renv_paths_lockfile()
+  # Use renv exported path function (project should be activated by now)
+  lockfile_path <- renv::paths$lockfile()
 
   # Read lockfile directly
   lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages

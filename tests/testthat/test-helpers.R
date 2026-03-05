@@ -121,16 +121,15 @@ test_that(".renv_lockfile_deps_get function exists", {
 })
 
 test_that(".renv_lockfile_deps_get returns empty list when no lockfile", {
-  old_lockfile <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  tmp <- tempfile("renvvv_test_nodeps_")
+  dir.create(tmp)
+  old_wd <- setwd(tmp)
   on.exit({
-    if (!is.na(old_lockfile)) {
-      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile)
-    } else {
-      Sys.unsetenv("RENV_PATHS_LOCKFILE")
-    }
+    setwd(old_wd)
+    unlink(tmp, recursive = TRUE)
   })
 
-  Sys.setenv(RENV_PATHS_LOCKFILE = tempfile(fileext = ".lock"))
+  # No renv project init here — lockfile should not exist
   result <- renvvv:::.renv_lockfile_deps_get()
   expect_type(result, "list")
   expect_length(result, 0L)
@@ -142,15 +141,8 @@ test_that(".renv_lockfile_deps_get returns named list from lockfile", {
   tmp <- tempfile("renvvv_test_deps_")
   dir.create(tmp)
   old_wd <- setwd(tmp)
-  old_lockfile_env <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
-  Sys.setenv(RENV_PATHS_LOCKFILE = file.path(tmp, "renv.lock"))
   on.exit({
     setwd(old_wd)
-    if (is.na(old_lockfile_env)) {
-      Sys.unsetenv("RENV_PATHS_LOCKFILE")
-    } else {
-      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile_env)
-    }
     unlink(tmp, recursive = TRUE)
   }, add = TRUE)
 
