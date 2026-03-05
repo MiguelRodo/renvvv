@@ -258,13 +258,13 @@
   cli::cli_alert_info("Attempting to restore packages individually.")
 
   failed_pkgs <- character(0)
+  installed_now <- rownames(installed.packages())
 
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
       if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
         x_deps <- lockfile_deps[[x]]
         if (!is.null(x_deps) && length(x_deps) > 0L) {
-          installed_now <- rownames(installed.packages())
           blocking <- failed_pkgs[
             failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
           ]
@@ -290,6 +290,8 @@
       )
       if (!requireNamespace(x, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, x)
+      } else {
+        installed_now <- rownames(installed.packages())
       }
     }
   }
@@ -397,6 +399,7 @@
   cli::cli_alert_info("Attempting to install missing packages individually.")
 
   failed_pkgs <- character(0)
+  installed_now <- rownames(installed.packages())
 
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
@@ -405,7 +408,6 @@
       if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
         x_deps <- lockfile_deps[[pkg_name]]
         if (!is.null(x_deps) && length(x_deps) > 0L) {
-          installed_now <- rownames(installed.packages())
           blocking <- failed_pkgs[
             failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
           ]
@@ -424,6 +426,8 @@
       .renv_install(x, biocmanager_install, is_bioc)
       if (!requireNamespace(pkg_name, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, pkg_name)
+      } else {
+        installed_now <- rownames(installed.packages())
       }
     }
   }
