@@ -183,7 +183,6 @@ skip_if_dep_unavailable will be ignored."
 #' @importFrom utils installed.packages
 # Internal function to get package lists from the renv lockfile
 .renv_lockfile_pkg_get <- function() {
-  # Use renv exported path function (project should be activated by now)
   lockfile_path <- renv::paths$lockfile()
 
   # Read lockfile directly

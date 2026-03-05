@@ -12,6 +12,31 @@
   Sys.setenv(RENV_CONFIG_PAK_ENABLED = "FALSE")
   # Override lockfile path so renv always reads from the correct project
   Sys.setenv(RENV_PATHS_LOCKFILE = file.path(tmp, "renv.lock"))
+  # Temporarily move test packages out of global lib paths so that
+  # renv::restore() cannot find them there and must actually install them
+  # into the project library. This prevents "library already synchronized"
+  # false positives when packages happen to be pre-installed globally.
+  hidden_dir <- tempfile("renvvv_hidden_")
+  dir.create(hidden_dir)
+  hidden_pkgs <- list()
+  if (!is.null(pkgs) && length(pkgs) > 0) {
+    counter <- 0L
+    for (pkg in pkgs) {
+      for (lib in old_libpaths) {
+        pkg_dir <- file.path(lib, pkg)
+        if (dir.exists(pkg_dir)) {
+          counter <- counter + 1L
+          dest <- file.path(hidden_dir, paste0(pkg, "_", counter))
+          if (isTRUE(try(file.rename(pkg_dir, dest), silent = TRUE))) {
+            hidden_pkgs[[counter]] <- list(
+              hidden = dest,
+              original = pkg_dir
+            )
+          }
+        }
+      }
+    }
+  }
   # Purge test packages from renv cache to avoid cross-test interference
   for (pkg in pkgs) {
     try(renv::purge(pkg, prompt = FALSE), silent = TRUE)
@@ -21,6 +46,8 @@
   .libPaths(c(.libPaths(), old_libpaths))
   list(
     dir = tmp,
+    hidden_dir = hidden_dir,
+    hidden_pkgs = hidden_pkgs,
     old_wd = old_wd,
     old_libpaths = old_libpaths,
     old_env = old_env,
@@ -36,6 +63,15 @@
   }
   setwd(ctx$old_wd)
   .libPaths(ctx$old_libpaths)
+  # Restore test packages that were temporarily moved out of global lib paths
+  for (info in ctx$hidden_pkgs) {
+    if (dir.exists(info$original)) {
+      # Original location was recreated during the test; discard hidden copy
+      try(unlink(info$hidden, recursive = TRUE), silent = TRUE)
+    } else {
+      try(file.rename(info$hidden, info$original), silent = TRUE)
+    }
+  }
   if (is.na(ctx$old_env)) {
     Sys.unsetenv("RENV_CONFIG_PAK_ENABLED")
   } else {
@@ -47,6 +83,7 @@
     Sys.setenv(RENV_PATHS_LOCKFILE = ctx$old_lockfile_env)
   }
   unlink(ctx$dir, recursive = TRUE)
+  unlink(ctx$hidden_dir, recursive = TRUE)
 }
 
 # Helper to remove a package from the renv project library
