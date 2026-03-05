@@ -8,7 +8,8 @@ renvvv_update(
   github = TRUE,
   non_github = TRUE,
   biocmanager_install = FALSE,
-  skip = character(0)
+  skip = character(0),
+  skip_if_dep_unavailable = TRUE
 )
 }
 \arguments{
@@ -25,6 +26,10 @@ Default is \code{FALSE}.}
 
 \item{skip}{Character vector. Package names to skip during update.
 Default is \code{character(0)} (no packages skipped).}
+
+\item{skip_if_dep_unavailable}{Logical. If \code{TRUE}, skip installing a
+package when one of its lockfile-listed dependencies previously failed
+to install and is not currently available. Default is \code{TRUE}.}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -49,6 +54,9 @@ renvvv_update(non_github = FALSE)
 
 # Skip specific packages
 renvvv_update(skip = c("dplyr", "ggplot2"))
+
+# Attempt every package even if a dependency failed
+renvvv_update(skip_if_dep_unavailable = FALSE)
 }
 
 }

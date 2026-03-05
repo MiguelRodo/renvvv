@@ -20,6 +20,9 @@
 #'   Default is `FALSE`.
 #' @param skip Character vector. Package names to skip during update.
 #'   Default is `character(0)` (no packages skipped).
+#' @param skip_if_dep_unavailable Logical. If `TRUE`, skip installing a
+#'   package when one of its lockfile-listed dependencies previously failed
+#'   to install and is not currently available. Default is `TRUE`.
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
@@ -33,13 +36,17 @@
 #'
 #' # Skip specific packages
 #' renvvv_update(skip = c("dplyr", "ggplot2"))
+#'
+#' # Attempt every package even if a dependency failed
+#' renvvv_update(skip_if_dep_unavailable = FALSE)
 #' }
 #'
 #' @export
 renvvv_update <- function(github = TRUE,
                               non_github = TRUE,
                               biocmanager_install = FALSE,
-                              skip = character(0)) {
+                              skip = character(0),
+                              skip_if_dep_unavailable = TRUE) {
   .check_renv()
   .ensure_cli()
   .check_renv_activation()
@@ -53,7 +60,8 @@ renvvv_update <- function(github = TRUE,
     github = github,
     restore = FALSE,
     biocmanager_install = biocmanager_install,
-    skip = skip
+    skip = skip,
+    skip_if_dep_unavailable = skip_if_dep_unavailable
   )
   cli::cli_h1("renv environment update completed")
   invisible(TRUE)

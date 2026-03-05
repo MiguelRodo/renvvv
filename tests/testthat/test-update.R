@@ -1,8 +1,12 @@
 # Integration tests for renvvv_update with real renv lockfiles
 # Shared helpers are loaded from helper-renv-project.R
 
-test_that("renvvv_update function exists", {
+test_that("renvvv_update accepts skip_if_dep_unavailable parameter", {
   expect_true(is.function(renvvv_update))
+  # Verify the parameter exists in the function signature
+  params <- formals(renvvv_update)
+  expect_true("skip_if_dep_unavailable" %in% names(params))
+  expect_true(isTRUE(params$skip_if_dep_unavailable))
 })
 
 test_that("renvvv_update updates a CRAN package to latest version", {

@@ -53,7 +53,8 @@ renvvv_restore <- function(github = TRUE,
     github = github,
     restore = TRUE,
     biocmanager_install = biocmanager_install,
-    skip = skip
+    skip = skip,
+    skip_if_dep_unavailable = TRUE
   )
   cli::cli_h1("renv environment restoration completed")
   invisible(TRUE)
