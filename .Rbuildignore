@@ -1,3 +1,5 @@
+^AGENTS\.md$
+^cran-comments\.md$
 ^renv$
 ^renv\.lock$
 ^LICENSE\.md$

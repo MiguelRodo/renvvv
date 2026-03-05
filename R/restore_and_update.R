@@ -52,4 +52,5 @@ renvvv_restore_and_update <- function(github = TRUE,
     skip,
     skip_if_dep_unavailable = skip_if_dep_unavailable
   )
+  invisible(TRUE)
 }
