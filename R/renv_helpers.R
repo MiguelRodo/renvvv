@@ -31,9 +31,51 @@
   return(lockfile_path)
 }
 
+# Extract package names from a DESCRIPTION-style dependency field value.
+# Handles entries like "curl (>= 5.1.0)" or plain "mime", returning
+# only the package name without version constraints.
+.parse_dep_field <- function(field_val) {
+  if (is.null(field_val) || length(field_val) == 0) return(character(0))
+  pkgs <- trimws(gsub("\\s*\\(.*?\\)", "", as.character(field_val)))
+  pkgs[nzchar(pkgs)]
+}
+
+# Strategy 1 (renv 0.15.0 - 1.0.x): use the pre-computed Requirements field.
+# Returns NULL if no package has a Requirements field (wrong lockfile format).
+.deps_from_requirements <- function(lockfile_list_pkg) {
+  has_requirements <- any(
+    vapply(lockfile_list_pkg, function(x) !is.null(x$Requirements), logical(1))
+  )
+  if (!has_requirements) return(NULL)
+  lapply(lockfile_list_pkg, function(pkg_info) {
+    reqs <- pkg_info$Requirements
+    if (is.null(reqs)) character(0) else as.character(reqs)
+  })
+}
+
+# Strategy 2 (renv 1.1.0+): parse Imports / Depends / LinkingTo fields.
+# Returns NULL if no package has any of these fields (wrong lockfile format).
+.deps_from_description_fields <- function(lockfile_list_pkg) {
+  dep_fields <- c("Depends", "Imports", "LinkingTo")
+  has_fields <- any(vapply(lockfile_list_pkg, function(x) {
+    any(dep_fields %in% names(x))
+  }, logical(1)))
+  if (!has_fields) return(NULL)
+  lapply(lockfile_list_pkg, function(pkg_info) {
+    raw <- unlist(pkg_info[intersect(dep_fields, names(pkg_info))],
+                  use.names = FALSE)
+    unique(.parse_dep_field(raw))
+  })
+}
+
 # Internal function to get package dependencies from the renv lockfile.
-# Returns a named list mapping each package name to its Requirements vector.
-# Returns an empty list and warns if dependencies cannot be extracted.
+# Returns a named list mapping each package name to its dependency names.
+# Returns an empty list and emits a warning if dependencies cannot be
+# extracted (so callers can proceed without skipping).
+#
+# Two strategies are tried in order:
+#   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
+#   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
 .renv_lockfile_deps_get <- function() {
   tryCatch({
     lockfile_path <- renv::paths$lockfile()
@@ -41,11 +83,21 @@
       return(list())
     }
     lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
-    deps <- lapply(lockfile_list_pkg, function(pkg_info) {
-      reqs <- pkg_info$Requirements
-      if (is.null(reqs)) character(0) else as.character(reqs)
-    })
-    deps
+    if (length(lockfile_list_pkg) == 0) {
+      return(list())
+    }
+
+    deps <- .deps_from_requirements(lockfile_list_pkg)
+    if (!is.null(deps)) return(deps)
+
+    deps <- .deps_from_description_fields(lockfile_list_pkg)
+    if (!is.null(deps)) return(deps)
+
+    cli::cli_alert_warning(
+      "Could not extract package dependencies from lockfile; \\
+skip_if_dep_unavailable will be ignored."
+    )
+    list()
   }, error = function(e) {
     cli::cli_alert_warning(
       paste0(

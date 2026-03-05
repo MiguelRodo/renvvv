@@ -120,6 +120,79 @@ test_that(".renv_lockfile_deps_get function exists", {
   expect_true(is.function(renvvv:::.renv_lockfile_deps_get))
 })
 
+test_that(".parse_dep_field helper exists", {
+  expect_true(is.function(renvvv:::.parse_dep_field))
+})
+
+test_that(".deps_from_requirements strategy exists", {
+  expect_true(is.function(renvvv:::.deps_from_requirements))
+})
+
+test_that(".deps_from_description_fields strategy exists", {
+  expect_true(is.function(renvvv:::.deps_from_description_fields))
+})
+
+test_that(".parse_dep_field strips version constraints", {
+  result <- renvvv:::.parse_dep_field(c("curl (>= 5.1.0)", "mime", "R6"))
+  expect_equal(result, c("curl", "mime", "R6"))
+})
+
+test_that(".parse_dep_field handles NULL and empty inputs", {
+  expect_equal(renvvv:::.parse_dep_field(NULL), character(0))
+  expect_equal(renvvv:::.parse_dep_field(character(0)), character(0))
+})
+
+test_that(".deps_from_requirements returns NULL when no Requirements field", {
+  pkgs <- list(
+    mime = list(Package = "mime", Imports = c("tools"))
+  )
+  expect_null(renvvv:::.deps_from_requirements(pkgs))
+})
+
+test_that(".deps_from_requirements extracts deps from Requirements field", {
+  pkgs <- list(
+    httr = list(
+      Package = "httr",
+      Requirements = c("R", "curl", "mime")
+    ),
+    mime = list(
+      Package = "mime",
+      Requirements = c("tools")
+    )
+  )
+  result <- renvvv:::.deps_from_requirements(pkgs)
+  expect_type(result, "list")
+  expect_equal(result[["httr"]], c("R", "curl", "mime"))
+  expect_equal(result[["mime"]], c("tools"))
+})
+
+test_that(".deps_from_description_fields returns NULL when no dep fields", {
+  pkgs <- list(
+    sys = list(Package = "sys", Version = "3.4.3")
+  )
+  expect_null(renvvv:::.deps_from_description_fields(pkgs))
+})
+
+test_that(".deps_from_description_fields parses Imports and Depends", {
+  pkgs <- list(
+    httr = list(
+      Package = "httr",
+      Depends = c("R (>= 3.6)"),
+      Imports = c("curl (>= 5.1.0)", "jsonlite", "mime")
+    ),
+    mime = list(
+      Package = "mime",
+      Imports = c("tools")
+    )
+  )
+  result <- renvvv:::.deps_from_description_fields(pkgs)
+  expect_type(result, "list")
+  expect_true("curl" %in% result[["httr"]])
+  expect_true("R" %in% result[["httr"]])
+  expect_false("R (>= 3.6)" %in% result[["httr"]])
+  expect_equal(result[["mime"]], "tools")
+})
+
 test_that(".renv_lockfile_deps_get returns empty list when no lockfile", {
   tmp <- tempfile("renvvv_test_nodeps_")
   dir.create(tmp)
