@@ -1,8 +1,11 @@
 # Integration tests for renvvv_restore_and_update with real renv lockfiles
 # Shared helpers are loaded from helper-renv-project.R
 
-test_that("renvvv_restore_and_update function exists", {
+test_that("renvvv_restore_and_update accepts skip_if_dep_unavailable parameter", {
   expect_true(is.function(renvvv_restore_and_update))
+  params <- formals(renvvv_restore_and_update)
+  expect_true("skip_if_dep_unavailable" %in% names(params))
+  expect_true(isTRUE(params$skip_if_dep_unavailable))
 })
 
 test_that("renvvv_restore_and_update restores then updates a CRAN package", {

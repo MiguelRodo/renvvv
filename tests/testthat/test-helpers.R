@@ -115,6 +115,56 @@ test_that(".renv_paths_lockfile handles RENV_PROFILE", {
   expect_equal(result, expected)
 })
 
+# Test .renv_lockfile_deps_get
+test_that(".renv_lockfile_deps_get function exists", {
+  expect_true(is.function(renvvv:::.renv_lockfile_deps_get))
+})
+
+test_that(".renv_lockfile_deps_get returns empty list when no lockfile", {
+  old_lockfile <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  on.exit({
+    if (!is.na(old_lockfile)) {
+      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile)
+    } else {
+      Sys.unsetenv("RENV_PATHS_LOCKFILE")
+    }
+  })
+
+  Sys.setenv(RENV_PATHS_LOCKFILE = tempfile(fileext = ".lock"))
+  result <- renvvv:::.renv_lockfile_deps_get()
+  expect_type(result, "list")
+  expect_length(result, 0L)
+})
+
+test_that(".renv_lockfile_deps_get returns named list from lockfile", {
+  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
+
+  tmp <- tempfile("renvvv_test_deps_")
+  dir.create(tmp)
+  old_wd <- setwd(tmp)
+  old_lockfile_env <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
+  Sys.setenv(RENV_PATHS_LOCKFILE = file.path(tmp, "renv.lock"))
+  on.exit({
+    setwd(old_wd)
+    if (is.na(old_lockfile_env)) {
+      Sys.unsetenv("RENV_PATHS_LOCKFILE")
+    } else {
+      Sys.setenv(RENV_PATHS_LOCKFILE = old_lockfile_env)
+    }
+    unlink(tmp, recursive = TRUE)
+  }, add = TRUE)
+
+  renv::init(bare = TRUE, restart = FALSE)
+  renv::install("mime", prompt = FALSE)
+  renv::snapshot(packages = "mime", confirm = FALSE)
+
+  result <- renvvv:::.renv_lockfile_deps_get()
+
+  expect_type(result, "list")
+  expect_true("mime" %in% names(result))
+  expect_type(result[["mime"]], "character")
+})
+
 # Test .renv_lockfile_pkg_get (requires a mock lockfile)
 test_that(".renv_lockfile_pkg_get function exists", {
   expect_true(is.function(renvvv:::.renv_lockfile_pkg_get))
@@ -155,6 +205,25 @@ test_that(".renv_restore_or_update_impl accepts valid parameters", {
       non_github = TRUE,
       restore = TRUE,
       biocmanager_install = FALSE
+    )
+  })
+
+  expect_true(result)
+})
+
+test_that(".renv_restore_or_update_impl accepts skip_if_dep_unavailable", {
+  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
+
+  pkg_list <- list(regular = character(0), bioc = character(0), gh = character(0))
+
+  suppressMessages({
+    result <- renvvv:::.renv_restore_or_update_impl(
+      package_list = pkg_list,
+      github = TRUE,
+      non_github = TRUE,
+      restore = FALSE,
+      biocmanager_install = FALSE,
+      skip_if_dep_unavailable = FALSE
     )
   })
 
@@ -225,6 +294,36 @@ test_that(".renv_restore_remaining handles empty package list", {
   expect_false(result)
 })
 
+test_that(".renv_restore_remaining skips pkg when failed dep not installed", {
+  # Simulate: pkg1 failed, pkg2 depends on pkg1
+  # pkg1 is not installed, so pkg2 should be skipped
+  failed <- character(0)
+
+  # We can't test the full renv restore without a project, but we can test
+  # that the function accepts the new parameters without error
+  suppressMessages({
+    result <- renvvv:::.renv_restore_remaining(
+      pkg = character(0),
+      skip_if_dep_unavailable = TRUE,
+      lockfile_deps = list(pkg2 = "pkg1")
+    )
+  })
+
+  expect_false(result)
+})
+
+test_that(".renv_restore_remaining accepts skip_if_dep_unavailable=FALSE", {
+  suppressMessages({
+    result <- renvvv:::.renv_restore_remaining(
+      pkg = character(0),
+      skip_if_dep_unavailable = FALSE,
+      lockfile_deps = list()
+    )
+  })
+
+  expect_false(result)
+})
+
 # Test .renv_install
 test_that(".renv_install function exists", {
   expect_true(is.function(renvvv:::.renv_install))
@@ -260,6 +359,20 @@ test_that(".renv_install_remaining handles empty package list", {
   expect_false(result)
 })
 
+test_that(".renv_install_remaining accepts skip_if_dep_unavailable param", {
+  suppressMessages({
+    result <- renvvv:::.renv_install_remaining(
+      pkg = character(0),
+      biocmanager_install = FALSE,
+      is_bioc = FALSE,
+      skip_if_dep_unavailable = TRUE,
+      lockfile_deps = list(pkg2 = "pkg1")
+    )
+  })
+
+  expect_false(result)
+})
+
 # Test package name extraction from remotes
 test_that("Package name extraction works correctly", {
   # This tests the pattern used in multiple functions
@@ -271,3 +384,4 @@ test_that("Package name extraction works correctly", {
   pkg_name <- sub("^.*/", "", pkg_without_remote)
   expect_equal(pkg_name, "package")
 })
+

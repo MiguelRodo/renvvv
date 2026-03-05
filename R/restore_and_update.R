@@ -19,6 +19,10 @@
 #'   Default is `FALSE`.
 #' @param skip Character vector. Package names to skip during restore and update.
 #'   Default is `character(0)` (no packages skipped).
+#' @param skip_if_dep_unavailable Logical. Passed to `renvvv_update()`. If
+#'   `TRUE`, skip installing a package during the update step when one of its
+#'   lockfile-listed dependencies previously failed to install and is not
+#'   currently available. Default is `TRUE`.
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
@@ -29,13 +33,23 @@
 #'
 #' # Skip specific packages
 #' renvvv_restore_and_update(skip = c("dplyr", "ggplot2"))
+#'
+#' # Attempt every package during update even if a dependency failed
+#' renvvv_restore_and_update(skip_if_dep_unavailable = FALSE)
 #' }
 #'
 #' @export
 renvvv_restore_and_update <- function(github = TRUE,
                                           non_github = TRUE,
                                           biocmanager_install = FALSE,
-                                          skip = character(0)) {
+                                          skip = character(0),
+                                          skip_if_dep_unavailable = TRUE) {
   renvvv_restore(github, non_github, biocmanager_install, skip)
-  renvvv_update(github, non_github, biocmanager_install, skip)
+  renvvv_update(
+    github,
+    non_github,
+    biocmanager_install,
+    skip,
+    skip_if_dep_unavailable = skip_if_dep_unavailable
+  )
 }

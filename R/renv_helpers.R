@@ -31,6 +31,22 @@
   return(lockfile_path)
 }
 
+# Internal function to get package dependencies from the renv lockfile.
+# Returns a named list mapping each package name to its Requirements vector.
+# Returns an empty list if no lockfile is found.
+.renv_lockfile_deps_get <- function() {
+  lockfile_path <- .renv_paths_lockfile()
+  if (!file.exists(lockfile_path)) {
+    return(list())
+  }
+  lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+  deps <- lapply(lockfile_list_pkg, function(pkg_info) {
+    reqs <- pkg_info$Requirements
+    if (is.null(reqs)) character(0) else as.character(reqs)
+  })
+  deps
+}
+
 # Internal function to get package lists from the renv lockfile
 .renv_lockfile_pkg_get <- function() {
   # Find lockfile path without activating the project
@@ -73,7 +89,10 @@
                                                non_github,
                                                restore,
                                                biocmanager_install,
-                                               skip = character(0)) {
+                                               skip = character(0),
+                                               skip_if_dep_unavailable = TRUE) {
+  lockfile_deps <- .renv_lockfile_deps_get()
+
   # CRAN Packages
   .renv_restore_or_update_actual_wrapper(
     pkg = package_list[["regular"]],
@@ -81,7 +100,9 @@
     restore = restore,
     source = "CRAN",
     biocmanager_install = biocmanager_install,
-    skip = skip
+    skip = skip,
+    skip_if_dep_unavailable = skip_if_dep_unavailable,
+    lockfile_deps = lockfile_deps
   )
 
   # Bioconductor Packages
@@ -91,7 +112,9 @@
     restore = restore,
     source = "Bioconductor",
     biocmanager_install = biocmanager_install,
-    skip = skip
+    skip = skip,
+    skip_if_dep_unavailable = skip_if_dep_unavailable,
+    lockfile_deps = lockfile_deps
   )
 
   # GitHub Packages
@@ -101,7 +124,9 @@
     restore = restore,
     source = "GitHub",
     biocmanager_install = biocmanager_install,
-    skip = skip
+    skip = skip,
+    skip_if_dep_unavailable = skip_if_dep_unavailable,
+    lockfile_deps = lockfile_deps
   )
   invisible(TRUE)
 }
@@ -112,7 +137,9 @@
                                                          restore,
                                                          source,
                                                          biocmanager_install,
-                                                         skip = character(0)) {
+                                                         skip = character(0),
+                                                         skip_if_dep_unavailable = TRUE,
+                                                         lockfile_deps = list()) {
   # Filter out packages in the skip list
   # For GitHub packages, extract package name from "user/package" format
   pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
@@ -140,7 +167,9 @@
       pkg_to_process,
       restore,
       biocmanager_install,
-      is_bioc = (source == "Bioconductor")
+      is_bioc = (source == "Bioconductor"),
+      skip_if_dep_unavailable = skip_if_dep_unavailable,
+      lockfile_deps = lockfile_deps
     )
   } else {
     action <- if (restore) "restoring" else "installing"
@@ -149,7 +178,10 @@
 }
 
 # Internal function to restore or update packages
-.renv_restore_update_actual <- function(pkg, restore, biocmanager_install, is_bioc) {
+.renv_restore_update_actual <- function(pkg, restore, biocmanager_install,
+                                         is_bioc,
+                                         skip_if_dep_unavailable = TRUE,
+                                         lockfile_deps = list()) {
   if (length(pkg) == 0L) {
     return(invisible(FALSE))
   }
@@ -181,7 +213,11 @@
       }
     )
     cli::cli_alert_info("Checking for packages that failed to restore.")
-    .renv_restore_remaining(pkg_names)
+    .renv_restore_remaining(
+      pkg_names,
+      skip_if_dep_unavailable = skip_if_dep_unavailable,
+      lockfile_deps = lockfile_deps
+    )
   } else {
     cli::cli_alert_info(
       "Installing latest {pkg_type} packages: {.pkg {pkg_names}}"
@@ -192,12 +228,20 @@
 
   cli::cli_alert_info("Checking for packages that are still not installed.")
   # Install any remaining packages that were not installed
-  .renv_install_remaining(pkg, biocmanager_install, is_bioc)
+  .renv_install_remaining(
+    pkg,
+    biocmanager_install,
+    is_bioc,
+    skip_if_dep_unavailable = skip_if_dep_unavailable,
+    lockfile_deps = lockfile_deps
+  )
   invisible(TRUE)
 }
 
 # Internal function to restore remaining packages individually
-.renv_restore_remaining <- function(pkg) {
+.renv_restore_remaining <- function(pkg,
+                                     skip_if_dep_unavailable = TRUE,
+                                     lockfile_deps = list()) {
   .ensure_cli()
 
   installed_pkgs <- rownames(installed.packages())
@@ -213,8 +257,29 @@
   )
   cli::cli_alert_info("Attempting to restore packages individually.")
 
+  failed_pkgs <- character(0)
+
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
+      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
+        x_deps <- lockfile_deps[[x]]
+        if (!is.null(x_deps) && length(x_deps) > 0L) {
+          installed_now <- rownames(installed.packages())
+          blocking <- failed_pkgs[
+            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
+          ]
+          if (length(blocking) > 0L) {
+            cli::cli_alert_warning(
+              paste0(
+                "Skipping {.pkg {x}}: dep ",
+                "{.pkg {blocking}} failed and is not installed."
+              )
+            )
+            failed_pkgs <- c(failed_pkgs, x)
+            next
+          }
+        }
+      }
       tryCatch(
         renv::restore(packages = x, transactional = FALSE),
         error = function(e) {
@@ -223,6 +288,9 @@
           )
         }
       )
+      if (!requireNamespace(x, quietly = TRUE)) {
+        failed_pkgs <- c(failed_pkgs, x)
+      }
     }
   }
 }
@@ -288,7 +356,9 @@
 }
 
 # Internal function to install any remaining packages
-.renv_install_remaining <- function(pkg, biocmanager_install, is_bioc) {
+.renv_install_remaining <- function(pkg, biocmanager_install, is_bioc,
+                                     skip_if_dep_unavailable = TRUE,
+                                     lockfile_deps = list()) {
   .ensure_cli()
 
   installed_pkgs <- rownames(installed.packages())
@@ -326,10 +396,35 @@
   )
   cli::cli_alert_info("Attempting to install missing packages individually.")
 
+  failed_pkgs <- character(0)
+
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
-    if (!requireNamespace(sub("^.*/", "", x), quietly = TRUE)) {
+    pkg_name <- sub("^.*/", "", x)
+    if (!requireNamespace(pkg_name, quietly = TRUE)) {
+      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
+        x_deps <- lockfile_deps[[pkg_name]]
+        if (!is.null(x_deps) && length(x_deps) > 0L) {
+          installed_now <- rownames(installed.packages())
+          blocking <- failed_pkgs[
+            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
+          ]
+          if (length(blocking) > 0L) {
+            cli::cli_alert_warning(
+              paste0(
+                "Skipping {.pkg {pkg_name}}: dep ",
+                "{.pkg {blocking}} failed and is not installed."
+              )
+            )
+            failed_pkgs <- c(failed_pkgs, pkg_name)
+            next
+          }
+        }
+      }
       .renv_install(x, biocmanager_install, is_bioc)
+      if (!requireNamespace(pkg_name, quietly = TRUE)) {
+        failed_pkgs <- c(failed_pkgs, pkg_name)
+      }
     }
   }
 
