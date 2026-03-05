@@ -87,25 +87,7 @@ renvvv_restore_and_update()
 
 This runs `renvvv_restore()` followed by `renvvv_update()`.
 
-## Managing Dependencies
-
-### Add packages and update dependencies file
-
-Add new packages to your `_dependencies.R` file and install them in one step:
-
-```{r}
-renvvv_dep_add(c("dplyr", "ggplot2"))
-```
-
-This:
-
-1. Adds `library(dplyr)` and `library(ggplot2)` to `_dependencies.R`
-2. Installs the packages via `renv::install()`
-3. Creates `_dependencies.R` if it doesn't exist
-
-Useful when you want to track package dependencies in a single file.
-
-### Bioconductor packages
+## Bioconductor packages
 
 By default, Bioconductor packages are installed via `renv::install("bioc::package")`. To use `BiocManager::install()` instead:
 
@@ -113,18 +95,6 @@ By default, Bioconductor packages are installed via `renv::install("bioc::packag
 renvvv_restore(biocmanager_install = TRUE)
 renvvv_update(biocmanager_install = TRUE)
 ```
-
-## Project Setup
-
-### Configure repository settings
-
-Set up RSPM/CRAN repositories for your project:
-
-```{r}
-renvvv_renv_repos_setup()
-```
-
-This configures `.Rprofile` and helper scripts to ensure correct repositories are used based on your OS.
 
 ## Automatic Project Activation
 
@@ -148,9 +118,6 @@ renvvv_restore()
 ### Scenario 2: Updating project dependencies
 
 ```{r}
-# Add new packages
-renvvv_dep_add(c("tidyr", "purrr"))
-
 # Update everything to latest versions
 renvvv_update()
 
@@ -182,5 +149,4 @@ renvvv_restore(non_github = FALSE)
 
 - Use `skip` parameter to exclude problematic packages during bulk operations
 - Filter by source (`github`/`non_github`) for faster partial restores
-- Check `_dependencies.R` into version control to track package usage
 - Run `renv::snapshot()` after successful `renvvv_update()` to save new versions

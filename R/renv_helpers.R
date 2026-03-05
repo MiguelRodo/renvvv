@@ -1,3 +1,74 @@
+# Helper function to ensure the cli package is available
+.ensure_cli <- function() {
+  if (!requireNamespace("cli", quietly = TRUE)) {
+    try(renv::install("cli", prompt = FALSE))
+  }
+}
+
+# Helper function to check if renv is available
+.check_renv <- function() {
+  if (!requireNamespace("renv", quietly = TRUE)) {
+    stop("The 'renv' package is required but not installed.")
+  }
+}
+
+# Helper function to check and activate renv project if needed
+.check_renv_activation <- function() {
+  # Check if we're in a directory with a renv.lock file
+  lockfile_path <- .renv_paths_lockfile()
+  if (!file.exists(lockfile_path)) {
+    # Not in an renv project - no activation needed
+    return(invisible(NULL))
+  }
+
+  # Check if the project is already active
+  current_project <- renv::project(default = NULL)
+  project_dir <- getwd()
+
+  # Normalize paths for comparison
+  if (!is.null(current_project)) {
+    current_project <- normalizePath(current_project, mustWork = FALSE)
+  }
+  project_dir <- normalizePath(project_dir, mustWork = FALSE)
+
+  # If already active in the correct project, return
+  if (!is.null(current_project) && current_project == project_dir) {
+    return(invisible(NULL))
+  }
+
+  # Project is not active - need to activate
+  .ensure_cli()
+
+  if (interactive()) {
+    # Interactive mode - prompt user
+    cli::cli_alert_warning(
+      "The renv project at {.path {project_dir}} is not currently active."
+    )
+    response <- readline(
+      prompt = "Would you like to activate it now? (y/n): "
+    )
+    if (tolower(trimws(response)) %in% c("y", "yes")) {
+      cli::cli_alert_info("Activating renv project...")
+      renv::activate(project = project_dir)
+      cli::cli_alert_success("renv project activated.")
+    } else {
+      cli::cli_alert_info("Proceeding without activation.")
+      cli::cli_alert_warning(
+        "Note: Operations may not work as expected without activation."
+      )
+    }
+  } else {
+    # Non-interactive mode - activate silently
+    cli::cli_alert_info(
+      "Activating renv project at {.path {project_dir}}..."
+    )
+    renv::activate(project = project_dir)
+    cli::cli_alert_success("renv project activated.")
+  }
+
+  invisible(NULL)
+}
+
 # Internal function to find the renv lockfile path
 # Mimics renv::renv_paths_lockfile() logic without activating the project
 .renv_paths_lockfile <- function(project = NULL) {
@@ -109,6 +180,7 @@ skip_if_dep_unavailable will be ignored."
   })
 }
 
+#' @importFrom utils installed.packages
 # Internal function to get package lists from the renv lockfile
 .renv_lockfile_pkg_get <- function() {
   # Use renv exported path function (project should be activated by now)

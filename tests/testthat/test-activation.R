@@ -137,29 +137,3 @@ test_that("renvvv_update calls activation check", {
     nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
   )
 })
-
-test_that("renvvv_dep_add calls activation check", {
-  skip_on_cran()
-  skip_if_not(
-    requireNamespace("renv", quietly = TRUE),
-    "renv not available"
-  )
-
-  ctx <- .setup_renv_project()
-  on.exit({
-    if (file.exists("_dependencies.R")) {
-      unlink("_dependencies.R")
-    }
-    .teardown_renv_project(ctx)
-  }, add = TRUE)
-
-  # This should succeed with activation check
-  suppressMessages(renvvv_dep_add("utils", force = TRUE))
-
-  # Verify _dependencies.R was created
-  expect_true(file.exists("_dependencies.R"))
-
-  # Check content
-  content <- readLines("_dependencies.R")
-  expect_true("library(utils)" %in% content)
-})
