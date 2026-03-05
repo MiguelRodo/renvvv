@@ -243,6 +243,30 @@ test_that(".renv_install handles empty package list", {
   expect_true(TRUE)
 })
 
+test_that(".renv_install attempts BiocManager fallback when renv fails for bioc", {
+  skip_if_not(
+    requireNamespace("BiocManager", quietly = TRUE),
+    "BiocManager not available"
+  )
+
+  # Collect all messages emitted during the call
+  msgs <- character(0)
+  withCallingHandlers(
+    renvvv:::.renv_install(
+      pkg = "nonexistent.bioc.pkg.xyz",
+      biocmanager_install = FALSE,
+      is_bioc = TRUE
+    ),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+
+  # Should emit the BiocManager fallback info message
+  expect_true(any(grepl("BiocManager as fallback", msgs)))
+})
+
 # Test .renv_install_remaining
 test_that(".renv_install_remaining function exists", {
   expect_true(is.function(renvvv:::.renv_install_remaining))

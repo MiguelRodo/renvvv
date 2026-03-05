@@ -265,14 +265,34 @@
       cli::cli_alert_info(
         "Installing Bioconductor packages using renv: {.pkg {pkg}}"
       )
-      tryCatch(
-        renv::install(paste0("bioc::", pkg), prompt = FALSE),
-        error = function(e) {
-          cli::cli_alert_danger(
-            "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
+      install_ok <- tryCatch({
+        renv::install(paste0("bioc::", pkg), prompt = FALSE)
+        TRUE
+      }, error = function(e) {
+        cli::cli_alert_danger(
+          "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
+        )
+        FALSE
+      })
+      if (!install_ok && requireNamespace("BiocManager", quietly = TRUE)) {
+        cli::cli_alert_info(
+          paste0(
+            "Attempting to install Bioconductor packages using ",
+            "BiocManager as fallback: {.pkg {pkg}}"
           )
-        }
-      )
+        )
+        tryCatch(
+          BiocManager::install(pkg, update = FALSE, ask = FALSE),
+          error = function(e) {
+            cli::cli_alert_danger(
+              paste0(
+                "Failed to install Bioconductor packages using ",
+                "BiocManager: {.pkg {pkg}}. Error: {e$message}"
+              )
+            )
+          }
+        )
+      }
     }
   } else {
     cli::cli_alert_info("Installing packages: {.pkg {pkg}}")
