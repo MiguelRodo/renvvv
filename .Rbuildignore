@@ -18,3 +18,8 @@
 ^tests/testthat/renv\.lock$
 ^doc$
 ^Meta$
+^_quarto\.yml$
+^index\.qmd$
+^articles$
+^_site$
+^_freeze$
