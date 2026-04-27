@@ -1,0 +1,156 @@
+[
+  {
+    "objectID": "NEWS.html",
+    "href": "NEWS.html",
+    "title": "renvvv 0.1.1",
+    "section": "",
+    "text": "renvvv 0.1.1\n\nInitial CRAN submission.\nrenvvv_restore(): Restores packages from the lockfile, continuing past individual failures and retrying them individually.\nrenvvv_update(): Updates packages to their latest available versions, continuing past individual failures.\nrenvvv_restore_and_update(): Combines restore and update in sequence."
+  },
+  {
+    "objectID": "articles/getting-started.html",
+    "href": "articles/getting-started.html",
+    "title": "Getting Started with renvvv",
+    "section": "",
+    "text": "Standard renv::restore() stops at the first package failure, leaving your environment partially restored. renvvv continues past failures, retries them individually, and reports what couldn’t be installed — so you don’t lose progress on packages that can be restored."
+  },
+  {
+    "objectID": "articles/getting-started.html#installation",
+    "href": "articles/getting-started.html#installation",
+    "title": "Getting Started with renvvv",
+    "section": "Installation",
+    "text": "Installation\n# install.packages(\"devtools\")\ndevtools::install_github(\"MiguelRodo/renvvv\")"
+  },
+  {
+    "objectID": "articles/getting-started.html#core-functions",
+    "href": "articles/getting-started.html#core-functions",
+    "title": "Getting Started with renvvv",
+    "section": "Core Functions",
+    "text": "Core Functions\nlibrary(renvvv)\n\n# Restore lockfile versions — continues past individual failures\nrenvvv_restore()\n\n# Update all packages to their latest available versions\nrenvvv_update()\n\n# Restore lockfile versions, then update to latest\nrenvvv_restore_and_update()\nAll three functions accept the same filtering arguments:\n# Skip CRAN/Bioconductor packages (process only GitHub)\nrenvvv_restore(non_github = FALSE)\n\n# Skip GitHub packages (process only CRAN/Bioconductor)\nrenvvv_restore(github = FALSE)\n\n# Skip specific packages by name\nrenvvv_restore(skip = c(\"problematic_pkg\"))"
+  },
+  {
+    "objectID": "articles/getting-started.html#bioconductor-packages",
+    "href": "articles/getting-started.html#bioconductor-packages",
+    "title": "Getting Started with renvvv",
+    "section": "Bioconductor Packages",
+    "text": "Bioconductor Packages\nBy default, Bioconductor packages are installed via renv::install(\"bioc::package\"). To use BiocManager::install() instead, pass biocmanager_install = TRUE to any of the three functions."
+  },
+  {
+    "objectID": "articles/getting-started.html#automatic-project-activation",
+    "href": "articles/getting-started.html#automatic-project-activation",
+    "title": "Getting Started with renvvv",
+    "section": "Automatic Project Activation",
+    "text": "Automatic Project Activation\nIf you’re in a directory with renv.lock but the project isn’t active:\n\nInteractive session: you will be prompted to activate.\nNon-interactive session: the project activates automatically."
+  },
+  {
+    "objectID": "articles/getting-started.html#comparison-with-base-renv",
+    "href": "articles/getting-started.html#comparison-with-base-renv",
+    "title": "Getting Started with renvvv",
+    "section": "Comparison with Base renv",
+    "text": "Comparison with Base renv\n\n\n\nFeature\nrenv\nrenvvv\n\n\n\n\nStops on first restore error\nYes\nNo — continues and retries\n\n\nReports all failures at once\nNo\nYes\n\n\nFilter packages by source\nNo\nYes (github / non_github)\n\n\nSkip individual packages\nNo\nYes (skip)\n\n\nBatch update to latest versions\nNo\nYes (renvvv_update())"
+  },
+  {
+    "objectID": "vignettes/renvvv.html",
+    "href": "vignettes/renvvv.html",
+    "title": "Getting Started with renvvv",
+    "section": "",
+    "text": "Standard renv::restore() stops at the first package failure, leaving your environment partially restored. renvvv continues past failures, retries them individually, and reports what couldn’t be installed—so you don’t lose progress on packages that can be restored."
+  },
+  {
+    "objectID": "vignettes/renvvv.html#installation",
+    "href": "vignettes/renvvv.html#installation",
+    "title": "Getting Started with renvvv",
+    "section": "Installation",
+    "text": "Installation\n\n# install.packages(\"devtools\")\ndevtools::install_github(\"MiguelRodo/renvvv\")"
+  },
+  {
+    "objectID": "vignettes/renvvv.html#core-functions",
+    "href": "vignettes/renvvv.html#core-functions",
+    "title": "Getting Started with renvvv",
+    "section": "Core Functions",
+    "text": "Core Functions\n\nlibrary(renvvv)\n\n# Restore lockfile versions — continues past individual failures\nrenvvv_restore()\n\n# Update all packages to their latest available versions\nrenvvv_update()\n\n# Restore lockfile versions, then update to latest\nrenvvv_restore_and_update()\n\nAll three functions accept the same filtering arguments:\n\n# Skip CRAN/Bioconductor packages (process only GitHub)\nrenvvv_restore(non_github = FALSE)\n\n# Skip GitHub packages (process only CRAN/Bioconductor)\nrenvvv_restore(github = FALSE)\n\n# Skip specific packages by name\nrenvvv_restore(skip = c(\"problematic_pkg\"))"
+  },
+  {
+    "objectID": "vignettes/renvvv.html#bioconductor-packages",
+    "href": "vignettes/renvvv.html#bioconductor-packages",
+    "title": "Getting Started with renvvv",
+    "section": "Bioconductor Packages",
+    "text": "Bioconductor Packages\nBy default, Bioconductor packages are installed via renv::install(\"bioc::package\"). To use BiocManager::install() instead, pass biocmanager_install = TRUE to any of the three functions."
+  },
+  {
+    "objectID": "vignettes/renvvv.html#automatic-project-activation",
+    "href": "vignettes/renvvv.html#automatic-project-activation",
+    "title": "Getting Started with renvvv",
+    "section": "Automatic Project Activation",
+    "text": "Automatic Project Activation\nIf you’re in a directory with renv.lock but the project isn’t active:\n\nInteractive session: you will be prompted to activate.\nNon-interactive session: the project activates automatically."
+  },
+  {
+    "objectID": "vignettes/renvvv.html#comparison-with-base-renv",
+    "href": "vignettes/renvvv.html#comparison-with-base-renv",
+    "title": "Getting Started with renvvv",
+    "section": "Comparison with Base renv",
+    "text": "Comparison with Base renv\n\n\n\nFeature\nrenv\nrenvvv\n\n\n\n\nStops on first restore error\nYes\nNo — continues and retries\n\n\nReports all failures at once\nNo\nYes\n\n\nFilter packages by source\nNo\nYes (github / non_github)\n\n\nSkip individual packages\nNo\nYes (skip)\n\n\nBatch update to latest versions\nNo\nYes (renvvv_update())"
+  },
+  {
+    "objectID": "cran-comments.html",
+    "href": "cran-comments.html",
+    "title": "renvvv",
+    "section": "",
+    "text": "0 errors | 0 warnings | 0 notes"
+  },
+  {
+    "objectID": "cran-comments.html#r-cmd-check-results",
+    "href": "cran-comments.html#r-cmd-check-results",
+    "title": "renvvv",
+    "section": "",
+    "text": "0 errors | 0 warnings | 0 notes"
+  },
+  {
+    "objectID": "cran-comments.html#test-environments",
+    "href": "cran-comments.html#test-environments",
+    "title": "renvvv",
+    "section": "Test environments",
+    "text": "Test environments\n\nlocal Ubuntu 24.04, R 4.5.2\nGitHub Actions: macOS (release), Windows (release), Ubuntu (devel, release, oldrel-1)"
+  },
+  {
+    "objectID": "cran-comments.html#downstream-dependencies",
+    "href": "cran-comments.html#downstream-dependencies",
+    "title": "renvvv",
+    "section": "Downstream dependencies",
+    "text": "Downstream dependencies\nThere are currently no downstream dependencies for this package."
+  },
+  {
+    "objectID": "LICENSE.html",
+    "href": "LICENSE.html",
+    "title": "MIT License",
+    "section": "",
+    "text": "MIT License\nCopyright (c) 2023 renvvv authors\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "renvvv",
+    "section": "",
+    "text": "renvvv provides more robust renv restore and update functions that keep going even when individual packages fail. Standard renv::restore() stops on the first error; renvvv catches failures, retries them individually, and reports what couldn’t be installed — so you don’t lose progress on the packages that can be restored."
+  },
+  {
+    "objectID": "index.html#installation",
+    "href": "index.html#installation",
+    "title": "renvvv",
+    "section": "Installation",
+    "text": "Installation\n# install.packages(\"devtools\")\ndevtools::install_github(\"MiguelRodo/renvvv\")"
+  },
+  {
+    "objectID": "index.html#usage",
+    "href": "index.html#usage",
+    "title": "renvvv",
+    "section": "Usage",
+    "text": "Usage\nlibrary(renvvv)\n\n# Restore packages from lockfile — continues past individual failures\nrenvvv_restore()\n\n# Update all lockfile packages to latest versions\nrenvvv_update()\n\n# Restore first, then update\nrenvvv_restore_and_update()\nAll three functions handle CRAN, Bioconductor, and GitHub packages. Use the github and non_github arguments to control which sources to process."
+  },
+  {
+    "objectID": "index.html#license",
+    "href": "index.html#license",
+    "title": "renvvv",
+    "section": "License",
+    "text": "License\nMIT"
+  }
+]
