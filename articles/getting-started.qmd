@@ -1,0 +1,66 @@
+---
+title: "Getting Started with renvvv"
+---
+
+Standard `renv::restore()` stops at the first package failure, leaving your
+environment partially restored. **renvvv** continues past failures, retries
+them individually, and reports what couldn't be installed — so you don't lose
+progress on packages that *can* be restored.
+
+## Installation
+
+```r
+# install.packages("devtools")
+devtools::install_github("MiguelRodo/renvvv")
+```
+
+## Core Functions
+
+```r
+library(renvvv)
+
+# Restore lockfile versions — continues past individual failures
+renvvv_restore()
+
+# Update all packages to their latest available versions
+renvvv_update()
+
+# Restore lockfile versions, then update to latest
+renvvv_restore_and_update()
+```
+
+All three functions accept the same filtering arguments:
+
+```r
+# Skip CRAN/Bioconductor packages (process only GitHub)
+renvvv_restore(non_github = FALSE)
+
+# Skip GitHub packages (process only CRAN/Bioconductor)
+renvvv_restore(github = FALSE)
+
+# Skip specific packages by name
+renvvv_restore(skip = c("problematic_pkg"))
+```
+
+## Bioconductor Packages
+
+By default, Bioconductor packages are installed via
+`renv::install("bioc::package")`. To use `BiocManager::install()` instead,
+pass `biocmanager_install = TRUE` to any of the three functions.
+
+## Automatic Project Activation
+
+If you're in a directory with `renv.lock` but the project isn't active:
+
+- **Interactive session**: you will be prompted to activate.
+- **Non-interactive session**: the project activates automatically.
+
+## Comparison with Base renv
+
+| Feature | `renv` | `renvvv` |
+|---------|--------|----------|
+| Stops on first restore error | Yes | No — continues and retries |
+| Reports all failures at once | No | Yes |
+| Filter packages by source | No | Yes (`github` / `non_github`) |
+| Skip individual packages | No | Yes (`skip`) |
+| Batch update to latest versions | No | Yes (`renvvv_update()`) |

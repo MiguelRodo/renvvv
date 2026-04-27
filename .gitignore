@@ -18,3 +18,5 @@ tests/testthat/.Rprofile
 tests/testthat/renv/
 /doc/
 /Meta/
+/_site/
+/_freeze/

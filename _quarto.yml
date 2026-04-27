@@ -1,0 +1,27 @@
+project:
+  type: website
+
+website:
+  title: "renvvv"
+  description: >
+    Robust renv package restore and update functions that continue
+    past individual failures.
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: articles/getting-started.qmd
+        text: Get Started
+    right:
+      - icon: github
+        href: https://github.com/MiguelRodo/renvvv
+        aria-label: GitHub
+  sidebar: false
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+
+execute:
+  eval: false
