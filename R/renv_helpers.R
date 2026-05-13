@@ -181,8 +181,9 @@ skip_if_dep_unavailable will be ignored."
     cli::cli_alert_warning(
       paste0(
         "Could not extract package dependencies from lockfile ",
-        "(skip_if_dep_unavailable ignored): {e$message}"
-      )
+        "(skip_if_dep_unavailable ignored): {msg}"
+      ),
+      msg = e$message
     )
     list()
   })
@@ -349,7 +350,8 @@ skip_if_dep_unavailable will be ignored."
       renv::restore(packages = pkg_names, transactional = FALSE),
       error = function(e) {
         cli::cli_alert_danger(
-          "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}. Error: {e$message}"
+          "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}. Error: {msg}",
+          msg = e$message
         )
       }
     )
@@ -425,7 +427,8 @@ skip_if_dep_unavailable will be ignored."
         renv::restore(packages = x, transactional = FALSE),
         error = function(e) {
           cli::cli_alert_danger(
-            "Failed to restore package: {.pkg {x}}. Error: {e$message}"
+            "Failed to restore package: {.pkg {x}}. Error: {msg}",
+            msg = e$message
           )
         }
       )
@@ -455,7 +458,8 @@ skip_if_dep_unavailable will be ignored."
           renv::install(paste0("bioc::", pkg), prompt = FALSE),
           error = function(e) {
             cli::cli_alert_danger(
-              "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
+              "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {msg}",
+              msg = e$message
             )
           }
         )
@@ -467,7 +471,8 @@ skip_if_dep_unavailable will be ignored."
           BiocManager::install(pkg, update = TRUE, ask = FALSE),
           error = function(e) {
             cli::cli_alert_danger(
-              "Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}. Error: {e$message}"
+              "Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}. Error: {msg}",
+              msg = e$message
             )
           }
         )
@@ -480,7 +485,8 @@ skip_if_dep_unavailable will be ignored."
         renv::install(paste0("bioc::", pkg), prompt = FALSE),
         error = function(e) {
           cli::cli_alert_danger(
-            "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
+            "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {msg}",
+            msg = e$message
           )
         }
       )
@@ -491,7 +497,8 @@ skip_if_dep_unavailable will be ignored."
       renv::install(pkg, prompt = FALSE),
       error = function(e) {
         cli::cli_alert_danger(
-          "Failed to install packages: {.pkg {pkg}}. Error: {e$message}"
+          "Failed to install packages: {.pkg {pkg}}. Error: {msg}",
+          msg = e$message
         )
       }
     )
