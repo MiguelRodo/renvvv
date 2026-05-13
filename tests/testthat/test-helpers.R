@@ -35,6 +35,39 @@ test_that(".renv_paths_lockfile function exists", {
   expect_true(is.function(renvvv:::.renv_paths_lockfile))
 })
 
+# Test .get_missing_pkgs
+test_that(".get_missing_pkgs function exists", {
+  expect_true(is.function(renvvv:::.get_missing_pkgs))
+})
+
+test_that(".get_missing_pkgs handles empty vector", {
+  expect_equal(renvvv:::.get_missing_pkgs(character(0)), character(0))
+})
+
+test_that(".get_missing_pkgs correctly identifies missing packages", {
+  # Base packages should be available
+  expect_equal(renvvv:::.get_missing_pkgs(c("base", "utils")), character(0))
+
+  # A definitely missing package
+  missing_pkg <- "definitely_not_a_package_12345"
+  expect_equal(renvvv:::.get_missing_pkgs(missing_pkg), missing_pkg)
+
+  # Mixture of present and missing
+  expect_equal(
+    renvvv:::.get_missing_pkgs(c("base", missing_pkg)),
+    missing_pkg
+  )
+})
+
+test_that(".get_missing_pkgs handles remotes", {
+  missing_gh <- "user/definitely_not_a_package_12345"
+  expect_equal(renvvv:::.get_missing_pkgs(missing_gh), missing_gh)
+
+  # If we have a package installed that we refer to via remote
+  # (using 'cli' as it should be there for the tests)
+  expect_equal(renvvv:::.get_missing_pkgs("r-lib/cli"), character(0))
+})
+
 test_that(".renv_paths_lockfile returns default path", {
   # Clear environment variables
   old_lockfile <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)

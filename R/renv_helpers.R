@@ -102,6 +102,14 @@
   return(lockfile_path)
 }
 
+# Internal helper to check which packages are missing
+.get_missing_pkgs <- function(pkgs) {
+  if (length(pkgs) == 0L) return(character(0))
+  pkgs[!vapply(pkgs, function(x) {
+    requireNamespace(sub("^.*/", "", x), quietly = TRUE)
+  }, logical(1))]
+}
+
 # Extract package names from a DESCRIPTION-style dependency field value.
 # Handles entries like "curl (>= 5.1.0)" or plain "mime", returning
 # only the package name without version constraints.
@@ -515,11 +523,7 @@ skip_if_dep_unavailable will be ignored."
   .renv_install(pkg_remaining, biocmanager_install, is_bioc)
 
   # Check again for any packages that failed to install
-  pkg_still_missing <- pkg_remaining[
-    !sapply(pkg_remaining, function(x) {
-      requireNamespace(sub("^.*/", "", x), quietly = TRUE)
-    })
-  ]
+  pkg_still_missing <- .get_missing_pkgs(pkg_remaining)
 
   if (length(pkg_still_missing) == 0L) {
     cli::cli_alert_success("All remaining packages installed successfully.")
@@ -566,11 +570,7 @@ skip_if_dep_unavailable will be ignored."
   }
 
   # Final check
-  pkg_final_missing <- pkg_still_missing[
-    !sapply(pkg_still_missing, function(x) {
-      requireNamespace(sub("^.*/", "", x), quietly = TRUE)
-    })
-  ]
+  pkg_final_missing <- .get_missing_pkgs(pkg_still_missing)
 
   if (length(pkg_final_missing) == 0L) {
     cli::cli_alert_success(
