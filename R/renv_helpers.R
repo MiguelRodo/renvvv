@@ -140,11 +140,22 @@
     any(dep_fields %in% names(x))
   }, logical(1)))
   if (!has_fields) return(NULL)
-  lapply(lockfile_list_pkg, function(pkg_info) {
-    raw <- unlist(pkg_info[intersect(dep_fields, names(pkg_info))],
-                  use.names = FALSE)
-    unique(.parse_dep_field(raw))
-  })
+  lapply(lockfile_list_pkg, .extract_pkg_deps)
+}
+
+.extract_pkg_deps <- function(pkg_info) {
+  deps <- character(0)
+  fields <- c("Depends", "Imports", "LinkingTo")
+
+  for (field in fields) {
+    if (!is.null(pkg_info[[field]])) {
+      field_deps <- unlist(strsplit(pkg_info[[field]], ",\\s*"))
+      parsed <- unlist(lapply(field_deps, .parse_dep_field))
+      deps <- c(deps, parsed)
+    }
+  }
+
+  unique(deps[deps != "R"])
 }
 
 # Internal function to get package dependencies from the renv lockfile.
