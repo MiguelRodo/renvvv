@@ -94,7 +94,7 @@ test_that("renvvv_restore handles corrupted lockfile with invalid package versio
   lockfile$Packages$corruptedpkg <- list(
     Package = "corruptedpkg",
     Version = "100.0.1",
-    Source = "Repository",
+    Source = "unknown",
     Repository = "CRAN",
     Requirements = character(0)
   )
