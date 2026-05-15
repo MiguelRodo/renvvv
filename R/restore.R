@@ -46,7 +46,8 @@ renvvv_restore <- function(github = TRUE,
 
   cli::cli_h1("Starting renv environment restoration")
 
-  package_list <- .renv_lockfile_pkg_get()
+  lockfile_list_pkg <- .renv_lockfile_read_pkgs()
+  package_list <- .renv_lockfile_pkg_get(lockfile_list_pkg)
   .renv_restore_or_update_impl(
     package_list = package_list,
     non_github = non_github,
@@ -54,7 +55,8 @@ renvvv_restore <- function(github = TRUE,
     restore = TRUE,
     biocmanager_install = biocmanager_install,
     skip = skip,
-    skip_if_dep_unavailable = TRUE
+    skip_if_dep_unavailable = TRUE,
+    lockfile_list_pkg = lockfile_list_pkg
   )
   cli::cli_h1("renv environment restoration completed")
   invisible(TRUE)

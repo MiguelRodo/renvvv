@@ -161,23 +161,6 @@ test_that(".deps_from_requirements strategy exists", {
   expect_true(is.function(renvvv:::.deps_from_requirements))
 })
 
-test_that(".deps_from_requirements_pkg works correctly", {
-  # Character vector
-  pkg_char <- list(Requirements = c("pkg1", "pkg2"))
-  expect_equal(renvvv:::.deps_from_requirements_pkg(pkg_char), c("pkg1", "pkg2"))
-
-  # Named list
-  pkg_list <- list(Requirements = list(pkg1 = "*", pkg2 = ">= 1.0.0"))
-  expect_equal(renvvv:::.deps_from_requirements_pkg(pkg_list), c("pkg1", "pkg2"))
-
-  # NULL/Missing
-  expect_equal(renvvv:::.deps_from_requirements_pkg(list()), character(0))
-  expect_equal(renvvv:::.deps_from_requirements_pkg(list(Requirements = NULL)), character(0))
-
-  # Unexpected type
-  expect_equal(renvvv:::.deps_from_requirements_pkg(list(Requirements = 123)), character(0))
-})
-
 test_that(".deps_from_description_fields strategy exists", {
   expect_true(is.function(renvvv:::.deps_from_description_fields))
 })
@@ -238,54 +221,9 @@ test_that(".deps_from_description_fields parses Imports and Depends", {
   result <- renvvv:::.deps_from_description_fields(pkgs)
   expect_type(result, "list")
   expect_true("curl" %in% result[["httr"]])
-  expect_false("R" %in% result[["httr"]])
+  expect_true("R" %in% result[["httr"]])
   expect_false("R (>= 3.6)" %in% result[["httr"]])
   expect_equal(result[["mime"]], "tools")
-})
-
-test_that(".extract_pkg_deps function exists", {
-  expect_true(is.function(renvvv:::.extract_pkg_deps))
-})
-
-test_that(".extract_pkg_deps extracts all relevant fields correctly", {
-  pkg_info <- list(
-    Package = "dummy",
-    Depends = c("methods"),
-    Imports = c("utils", "stats (>= 4.0.0)"),
-    LinkingTo = c("Rcpp")
-  )
-  result <- renvvv:::.extract_pkg_deps(pkg_info)
-  expected <- c("methods", "utils", "stats", "Rcpp")
-  expect_equal(sort(result), sort(expected))
-})
-
-test_that(".extract_pkg_deps handles comma-separated fields", {
-  pkg_info <- list(
-    Package = "dummy",
-    Imports = "cli (>= 3.0), glue, rlang"
-  )
-  result <- renvvv:::.extract_pkg_deps(pkg_info)
-  expected <- c("cli", "glue", "rlang")
-  expect_equal(sort(result), sort(expected))
-})
-
-test_that(".extract_pkg_deps ignores R dependency", {
-  pkg_info <- list(
-    Package = "dummy",
-    Depends = c("R (>= 4.0.0)", "utils"),
-    Imports = "R"
-  )
-  result <- renvvv:::.extract_pkg_deps(pkg_info)
-  expect_equal(result, "utils")
-})
-
-test_that(".extract_pkg_deps gracefully handles missing fields", {
-  pkg_info <- list(
-    Package = "dummy",
-    Suggests = c("testthat")
-  )
-  result <- renvvv:::.extract_pkg_deps(pkg_info)
-  expect_equal(result, character(0))
 })
 
 test_that(".renv_lockfile_deps_get returns empty list when no lockfile", {
@@ -548,12 +486,12 @@ test_that("Package name extraction works correctly", {
 
 # Test .is_blocked_by_failed_deps
 test_that(".is_blocked_by_failed_deps function exists", {
-  expect_true(is.function(renvvv:::.is_blocked_by_failed_deps))
+  expect_true(is.function(.is_blocked_by_failed_deps))
 })
 
 test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   # Not skipped
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c(),
@@ -562,7 +500,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   ))
 
   # No failed pkgs
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = character(0),
     installed_now = c(),
@@ -571,7 +509,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   ))
 
   # No dependencies
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c(),
@@ -580,7 +518,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   ))
 
   # Dependency failed but is now installed
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c("pkgB"),
@@ -591,7 +529,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
 
 test_that(".is_blocked_by_failed_deps returns TRUE when blocked", {
   # Dependency failed and is not installed
-  expect_true(renvvv:::.is_blocked_by_failed_deps(
+  expect_true(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c(),
