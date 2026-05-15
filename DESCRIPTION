@@ -21,6 +21,7 @@ Imports:
 Suggests:
     BiocManager,
     knitr,
+    mockery,
     rcmdcheck,
     rmarkdown,
     testthat (>= 3.0.0)
