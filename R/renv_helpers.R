@@ -156,36 +156,45 @@
 #   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
 #   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
 .renv_lockfile_deps_get <- function() {
-  tryCatch({
-    lockfile_path <- renv::paths$lockfile()
-    if (!file.exists(lockfile_path)) {
-      return(list())
-    }
-    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
-    if (length(lockfile_list_pkg) == 0) {
-      return(list())
-    }
-
-    deps <- .deps_from_requirements(lockfile_list_pkg)
-    if (!is.null(deps)) return(deps)
-
-    deps <- .deps_from_description_fields(lockfile_list_pkg)
-    if (!is.null(deps)) return(deps)
-
-    cli::cli_alert_warning(
-      "Could not extract package dependencies from lockfile; \\
-skip_if_dep_unavailable will be ignored."
-    )
-    list()
+  lockfile_path <- tryCatch({
+    renv::paths$lockfile()
   }, error = function(e) {
     cli::cli_alert_warning(
-      paste0(
-        "Could not extract package dependencies from lockfile ",
-        "(skip_if_dep_unavailable ignored): {e$message}"
-      )
+      paste0("Could not determine lockfile path ",
+             "(skip_if_dep_unavailable ignored): {e$message}")
     )
-    list()
+    NULL
   })
+
+  if (is.null(lockfile_path) || !file.exists(lockfile_path)) {
+    return(list())
+  }
+
+  lockfile_list_pkg <- tryCatch({
+    renv::lockfile_read(file = lockfile_path)$Packages
+  }, error = function(e) {
+    cli::cli_alert_warning(
+      paste0("Could not read lockfile Packages ",
+             "(skip_if_dep_unavailable ignored): {e$message}")
+    )
+    NULL
+  })
+
+  if (is.null(lockfile_list_pkg) || length(lockfile_list_pkg) == 0) {
+    return(list())
+  }
+
+  deps <- .deps_from_requirements(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  deps <- .deps_from_description_fields(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  cli::cli_alert_warning(
+    "Could not extract package dependencies from lockfile; \\
+skip_if_dep_unavailable will be ignored."
+  )
+  list()
 }
 
 #' @importFrom utils installed.packages

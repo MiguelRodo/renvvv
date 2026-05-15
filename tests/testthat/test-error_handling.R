@@ -25,3 +25,37 @@ test_that("error handlers are triggered correctly when packages fail", {
   )
 
 })
+
+test_that(".renv_lockfile_deps_get handles lockfile path error gracefully", {
+  # Mock renv::paths$lockfile to throw an error. mockery::stub can handle "renv::paths$lockfile".
+  mockery::stub(.renv_lockfile_deps_get, "renv::paths$lockfile", function(...) stop("Mocked lockfile path error"))
+
+  # The error should be caught internally, returning an empty list.
+  # cli::cli_alert_warning issues messages, not warnings.
+  expect_message(
+    result <- .renv_lockfile_deps_get(),
+    "Could not determine lockfile path"
+  )
+  expect_type(result, "list")
+  expect_length(result, 0)
+})
+
+test_that(".renv_lockfile_deps_get handles lockfile read error gracefully", {
+  # Mock lockfile path so file.exists passes
+  tmp_lock <- tempfile("mock_renv_", fileext = ".lock")
+  file.create(tmp_lock)
+  on.exit(unlink(tmp_lock))
+
+  mockery::stub(.renv_lockfile_deps_get, "renv::paths$lockfile", function(...) tmp_lock)
+
+  # Mock renv::lockfile_read to throw an error
+  mockery::stub(.renv_lockfile_deps_get, "renv::lockfile_read", function(...) stop("Mocked lockfile read error"))
+
+  # The error should be caught internally, returning an empty list
+  expect_message(
+    result <- .renv_lockfile_deps_get(),
+    "Could not read lockfile Packages"
+  )
+  expect_type(result, "list")
+  expect_length(result, 0)
+})
