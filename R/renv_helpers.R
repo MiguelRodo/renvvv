@@ -147,6 +147,23 @@
   })
 }
 
+# Internal function to read packages from the renv lockfile
+.renv_lockfile_read_pkgs <- function() {
+  tryCatch({
+    lockfile_path <- renv::paths$lockfile()
+    if (!file.exists(lockfile_path)) {
+      return(list())
+    }
+    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+    if (is.null(lockfile_list_pkg)) {
+      return(list())
+    }
+    lockfile_list_pkg
+  }, error = function(e) {
+    list()
+  })
+}
+
 # Internal function to get package dependencies from the renv lockfile.
 # Returns a named list mapping each package name to its dependency names.
 # Returns an empty list and emits a warning if dependencies cannot be
@@ -155,13 +172,12 @@
 # Two strategies are tried in order:
 #   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
 #   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
-.renv_lockfile_deps_get <- function() {
+.renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
   tryCatch({
-    lockfile_path <- renv::paths$lockfile()
-    if (!file.exists(lockfile_path)) {
-      return(list())
+    if (is.null(lockfile_list_pkg)) {
+      lockfile_list_pkg <- .renv_lockfile_read_pkgs()
     }
-    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+
     if (length(lockfile_list_pkg) == 0) {
       return(list())
     }
@@ -190,11 +206,10 @@ skip_if_dep_unavailable will be ignored."
 
 #' @importFrom utils installed.packages
 # Internal function to get package lists from the renv lockfile
-.renv_lockfile_pkg_get <- function() {
-  lockfile_path <- renv::paths$lockfile()
-
-  # Read lockfile directly
-  lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+.renv_lockfile_pkg_get <- function(lockfile_list_pkg = NULL) {
+  if (is.null(lockfile_list_pkg)) {
+    lockfile_list_pkg <- .renv_lockfile_read_pkgs()
+  }
 
   pkg_vec_regular <- character()
   pkg_vec_bioc <- character()
@@ -231,8 +246,9 @@ skip_if_dep_unavailable will be ignored."
                                                restore,
                                                biocmanager_install,
                                                skip = character(0),
-                                               skip_if_dep_unavailable = TRUE) {
-  lockfile_deps <- .renv_lockfile_deps_get()
+                                               skip_if_dep_unavailable = TRUE,
+                                               lockfile_list_pkg = NULL) {
+  lockfile_deps <- .renv_lockfile_deps_get(lockfile_list_pkg)
 
   # CRAN Packages
   .renv_restore_or_update_actual_wrapper(
