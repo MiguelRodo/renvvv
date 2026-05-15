@@ -1,4 +1,4 @@
-skip_if_not_installed("mockery")
+testthat::skip_if_not_installed("mockery")
 test_that("success paths for installed_now are covered", {
   make_req_ns <- function() {
     called <- 0
