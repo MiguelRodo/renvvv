@@ -385,8 +385,9 @@ skip_if_dep_unavailable will be ignored."
                                      lockfile_deps = list()) {
   .ensure_cli()
 
-  installed_pkgs <- rownames(installed.packages())
-  pkg_remaining <- pkg[!pkg %in% installed_pkgs]
+  pkg_names <- sub("^.*/", "", pkg)
+  missing_names <- .get_missing_pkgs(pkg_names)
+  pkg_remaining <- pkg[pkg_names %in% missing_names]
 
   if (length(pkg_remaining) == 0L) {
     cli::cli_alert_success("All packages restored successfully.")
@@ -399,16 +400,14 @@ skip_if_dep_unavailable will be ignored."
   cli::cli_alert_info("Attempting to restore packages individually.")
 
   failed_pkgs <- character(0)
-  installed_now <- rownames(installed.packages())
 
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
       if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
         x_deps <- lockfile_deps[[x]]
         if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- failed_pkgs[
-            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
-          ]
+          failed_deps <- failed_pkgs[failed_pkgs %in% x_deps]
+          blocking <- .get_missing_pkgs(failed_deps)
           if (length(blocking) > 0L) {
             cli::cli_alert_warning(
               paste0(
@@ -431,8 +430,6 @@ skip_if_dep_unavailable will be ignored."
       )
       if (!requireNamespace(x, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, x)
-      } else {
-        installed_now <- rownames(installed.packages())
       }
     }
   }
@@ -504,10 +501,9 @@ skip_if_dep_unavailable will be ignored."
                                      lockfile_deps = list()) {
   .ensure_cli()
 
-  installed_pkgs <- rownames(installed.packages())
-  pkg_remaining <- pkg[
-    !sapply(pkg, function(x) sub("^.*/", "", x)) %in% installed_pkgs
-  ]
+  pkg_names <- sub("^.*/", "", pkg)
+  missing_names <- .get_missing_pkgs(pkg_names)
+  pkg_remaining <- pkg[pkg_names %in% missing_names]
 
   if (length(pkg_remaining) == 0L) {
     cli::cli_alert_success("All packages are installed.")
@@ -536,7 +532,6 @@ skip_if_dep_unavailable will be ignored."
   cli::cli_alert_info("Attempting to install missing packages individually.")
 
   failed_pkgs <- character(0)
-  installed_now <- rownames(installed.packages())
 
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
@@ -545,9 +540,8 @@ skip_if_dep_unavailable will be ignored."
       if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
         x_deps <- lockfile_deps[[pkg_name]]
         if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- failed_pkgs[
-            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
-          ]
+          failed_deps <- failed_pkgs[failed_pkgs %in% x_deps]
+          blocking <- .get_missing_pkgs(failed_deps)
           if (length(blocking) > 0L) {
             cli::cli_alert_warning(
               paste0(
@@ -563,8 +557,6 @@ skip_if_dep_unavailable will be ignored."
       .renv_install(x, biocmanager_install, is_bioc)
       if (!requireNamespace(pkg_name, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, pkg_name)
-      } else {
-        installed_now <- rownames(installed.packages())
       }
     }
   }
