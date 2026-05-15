@@ -437,7 +437,7 @@ skip_if_dep_unavailable will be ignored."
       if (!requireNamespace(x, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, x)
       } else {
-        installed_now <- rownames(installed.packages())
+        installed_now <- c(installed_now, x)
       }
     }
   }
@@ -569,7 +569,7 @@ skip_if_dep_unavailable will be ignored."
       if (!requireNamespace(pkg_name, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, pkg_name)
       } else {
-        installed_now <- rownames(installed.packages())
+        installed_now <- c(installed_now, pkg_name)
       }
     }
   }

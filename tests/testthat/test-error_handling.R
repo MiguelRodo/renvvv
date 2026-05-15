@@ -1,9 +1,11 @@
+testthat::skip_if_not_installed("mockery")
 test_that("error handlers are triggered correctly when packages fail", {
   skip_if_not_installed("mockery")
   # Mock renv::install and renv::restore to always throw errors
   mockery::stub(renvvv:::.renv_restore_remaining, "renv::restore", function(...) stop("Mocked restore error"))
   mockery::stub(renvvv:::.renv_install_remaining, "renv::install", function(...) stop("Mocked install error"))
-  mockery::stub(renvvv:::.renv_install_remaining, "BiocManager::install", function(...) stop("Mocked BiocManager install error"))
+  # We must mock .renv_install itself inside .renv_install_remaining so it doesn't call it
+  mockery::stub(renvvv:::.renv_install_remaining, ".renv_install", function(...) stop("Mocked BiocManager install error"))
 
   # Execute a deliberately failing restore and verify the expected message
   expect_message(
@@ -27,5 +29,4 @@ test_that("error handlers are triggered correctly when packages fail", {
     renvvv:::.renv_install_remaining("non_existent_pkg_bioc_renv", biocmanager_install = FALSE, is_bioc = TRUE),
     NA
   )
-
 })
