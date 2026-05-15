@@ -102,11 +102,16 @@
   return(lockfile_path)
 }
 
+# Extract package name from a remote spec (e.g. "user/repo" -> "repo")
+.extract_pkg_name <- function(x) {
+  sub("^.*/", "", x)
+}
+
 # Internal helper to check which packages are missing
 .get_missing_pkgs <- function(pkgs) {
   if (length(pkgs) == 0L) return(character(0))
   pkgs[!vapply(pkgs, function(x) {
-    requireNamespace(sub("^.*/", "", x), quietly = TRUE)
+    requireNamespace(.extract_pkg_name(x), quietly = TRUE)
   }, logical(1))]
 }
 
@@ -283,13 +288,13 @@ skip_if_dep_unavailable will be ignored."
                                                          lockfile_deps = list()) {
   # Filter out packages in the skip list
   # For GitHub packages, extract package name from "user/package" format
-  pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
   pkg_to_process <- pkg[!pkg_names %in% skip]
   pkg_skipped <- pkg[pkg_names %in% skip]
 
   # Report skipped packages
   if (length(pkg_skipped) > 0L) {
-    skipped_names <- sapply(pkg_skipped, function(x) sub("^.*/", "", x))
+    skipped_names <- vapply(pkg_skipped, .extract_pkg_name, character(1))
     action <- if (restore) "restoring" else "updating"
     cli::cli_alert_info(
       "Skipping {action} {source} packages: {.pkg {skipped_names}}"
@@ -338,7 +343,7 @@ skip_if_dep_unavailable will be ignored."
   }
 
   # Extract package names from possible remotes
-  pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
 
   if (restore) {
     cli::cli_alert_info(
@@ -506,7 +511,7 @@ skip_if_dep_unavailable will be ignored."
 
   installed_pkgs <- rownames(installed.packages())
   pkg_remaining <- pkg[
-    !sapply(pkg, function(x) sub("^.*/", "", x)) %in% installed_pkgs
+    !vapply(pkg, .extract_pkg_name, character(1)) %in% installed_pkgs
   ]
 
   if (length(pkg_remaining) == 0L) {
@@ -540,7 +545,7 @@ skip_if_dep_unavailable will be ignored."
 
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
-    pkg_name <- sub("^.*/", "", x)
+    pkg_name <- .extract_pkg_name(x)
     if (!requireNamespace(pkg_name, quietly = TRUE)) {
       if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
         x_deps <- lockfile_deps[[pkg_name]]
