@@ -201,31 +201,38 @@ skip_if_dep_unavailable will be ignored."
   # Read lockfile directly
   lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
 
-  pkg_vec_regular <- character()
-  pkg_vec_bioc <- character()
-  pkg_vec_gh <- character()
-
-  for (package_name in names(lockfile_list_pkg)) {
-    package_info <- lockfile_list_pkg[[package_name]]
-    remote_username <- package_info$RemoteUsername
-    source <- tolower(package_info$Source)
-
-    if (is.null(remote_username)) {
-      is_bioc <- grepl("bioc", source)
-      if (is_bioc) {
-        pkg_vec_bioc <- c(pkg_vec_bioc, package_name)
-      } else {
-        pkg_vec_regular <- c(pkg_vec_regular, package_name)
-      }
-    } else {
-      pkg_vec_gh <- c(pkg_vec_gh, paste0(remote_username, "/", package_name))
-    }
+  if (length(lockfile_list_pkg) == 0L) {
+    return(list(
+      regular = character(),
+      bioc = character(),
+      gh = character()
+    ))
   }
 
+  pkg_names <- names(lockfile_list_pkg)
+
+  remote_usernames <- vapply(
+    lockfile_list_pkg,
+    function(x) if (is.null(x$RemoteUsername)) "" else x$RemoteUsername,
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  sources <- vapply(
+    lockfile_list_pkg,
+    function(x) if (is.null(x$Source)) "" else tolower(x$Source),
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  is_gh <- remote_usernames != ""
+  is_bioc <- !is_gh & grepl("bioc", sources)
+  is_regular <- !is_gh & !is_bioc
+
   list(
-    regular = pkg_vec_regular,
-    bioc = pkg_vec_bioc,
-    gh = pkg_vec_gh
+    regular = pkg_names[is_regular],
+    bioc = pkg_names[is_bioc],
+    gh = paste0(remote_usernames[is_gh], "/", pkg_names[is_gh])
   )
 }
 
