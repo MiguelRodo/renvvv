@@ -221,9 +221,54 @@ test_that(".deps_from_description_fields parses Imports and Depends", {
   result <- renvvv:::.deps_from_description_fields(pkgs)
   expect_type(result, "list")
   expect_true("curl" %in% result[["httr"]])
-  expect_true("R" %in% result[["httr"]])
+  expect_false("R" %in% result[["httr"]])
   expect_false("R (>= 3.6)" %in% result[["httr"]])
   expect_equal(result[["mime"]], "tools")
+})
+
+test_that(".extract_pkg_deps function exists", {
+  expect_true(is.function(renvvv:::.extract_pkg_deps))
+})
+
+test_that(".extract_pkg_deps extracts all relevant fields correctly", {
+  pkg_info <- list(
+    Package = "dummy",
+    Depends = c("methods"),
+    Imports = c("utils", "stats (>= 4.0.0)"),
+    LinkingTo = c("Rcpp")
+  )
+  result <- renvvv:::.extract_pkg_deps(pkg_info)
+  expected <- c("methods", "utils", "stats", "Rcpp")
+  expect_equal(sort(result), sort(expected))
+})
+
+test_that(".extract_pkg_deps handles comma-separated fields", {
+  pkg_info <- list(
+    Package = "dummy",
+    Imports = "cli (>= 3.0), glue, rlang"
+  )
+  result <- renvvv:::.extract_pkg_deps(pkg_info)
+  expected <- c("cli", "glue", "rlang")
+  expect_equal(sort(result), sort(expected))
+})
+
+test_that(".extract_pkg_deps ignores R dependency", {
+  pkg_info <- list(
+    Package = "dummy",
+    Depends = c("R (>= 4.0.0)", "utils"),
+    Imports = "R"
+  )
+  result <- renvvv:::.extract_pkg_deps(pkg_info)
+  expect_equal(result, "utils")
+})
+
+test_that(".extract_pkg_deps gracefully handles missing fields", {
+  pkg_info <- list(
+    Package = "dummy",
+    Suggests = c("testthat")
+  )
+  result <- renvvv:::.extract_pkg_deps(pkg_info)
+  expect_equal(result, character(0))
 })
 
 test_that(".renv_lockfile_deps_get returns empty list when no lockfile", {
