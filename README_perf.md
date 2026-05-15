@@ -1,0 +1,6 @@
+## Rationale for optimization
+The previous implementation used a `for` loop that iteratively re-allocated vectors (`c(pkg_vec_bioc, package_name)`) inside the loop. In R, vectors are immutable, so appending an element to a vector using `c()` requires allocating a new block of memory and copying all elements from the old vector to the new one. This results in $O(N^2)$ time complexity for vector growth, where $N$ is the number of packages in the lockfile. This pattern is notoriously slow in R when vectors get larger.
+
+The new implementation avoids this iterative reallocation completely. It uses `vapply()` with a pre-specified output type (`character(1)`) to extract values from the nested list in $O(N)$ time. Pre-allocating vectors via `vapply` is much faster than `sapply` or `lapply` combined with `unlist`. Finally, logical indexing (`pkg_names[is_regular]`, etc.) efficiently filters the list, which is highly optimized internally in C.
+
+This leads to a change from $O(N^2)$ scaling behavior to $O(N)$, which will yield a massive performance improvement (likely over 10-100x speedup for typical to large project lockfiles), while also having lower memory overhead and preventing garbage collection pauses during package resolution.
