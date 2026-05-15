@@ -119,6 +119,19 @@
   pkgs[nzchar(pkgs)]
 }
 
+# Extract dependencies from a single package's Requirements field.
+.deps_from_requirements_pkg <- function(pkg_info) {
+  reqs <- pkg_info$Requirements
+  if (is.null(reqs)) return(character(0))
+
+  if (is.character(reqs)) {
+    return(as.character(reqs))
+  } else if (is.list(reqs)) {
+    return(names(reqs))
+  }
+  character(0)
+}
+
 # Strategy 1 (renv 0.15.0 - 1.0.x): use the pre-computed Requirements field.
 # Returns NULL if no package has a Requirements field (wrong lockfile format).
 .deps_from_requirements <- function(lockfile_list_pkg) {
@@ -126,10 +139,7 @@
     vapply(lockfile_list_pkg, function(x) !is.null(x$Requirements), logical(1))
   )
   if (!has_requirements) return(NULL)
-  lapply(lockfile_list_pkg, function(pkg_info) {
-    reqs <- pkg_info$Requirements
-    if (is.null(reqs)) character(0) else as.character(reqs)
-  })
+  lapply(lockfile_list_pkg, .deps_from_requirements_pkg)
 }
 
 # Strategy 2 (renv 1.1.0+): parse Imports / Depends / LinkingTo fields.
