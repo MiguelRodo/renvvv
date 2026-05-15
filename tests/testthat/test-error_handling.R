@@ -1,4 +1,5 @@
 test_that("error handlers are triggered correctly when packages fail", {
+  skip_if_not_installed("mockery")
   # Mock renv::install and renv::restore to always throw errors
   mockery::stub(renvvv:::.renv_restore_remaining, "renv::restore", function(...) stop("Mocked restore error"))
   mockery::stub(renvvv:::.renv_install_remaining, "renv::install", function(...) stop("Mocked install error"))
