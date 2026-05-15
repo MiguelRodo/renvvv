@@ -486,12 +486,12 @@ test_that("Package name extraction works correctly", {
 
 # Test .is_blocked_by_failed_deps
 test_that(".is_blocked_by_failed_deps function exists", {
-  expect_true(is.function(renvvv:::.is_blocked_by_failed_deps))
+  expect_true(is.function(.is_blocked_by_failed_deps))
 })
 
 test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   # Not skipped
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c(),
@@ -500,7 +500,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   ))
 
   # No failed pkgs
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = character(0),
     installed_now = c(),
@@ -509,7 +509,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   ))
 
   # No dependencies
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c(),
@@ -518,7 +518,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
   ))
 
   # Dependency failed but is now installed
-  expect_false(renvvv:::.is_blocked_by_failed_deps(
+  expect_false(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c("pkgB"),
@@ -529,7 +529,7 @@ test_that(".is_blocked_by_failed_deps returns FALSE when not blocked", {
 
 test_that(".is_blocked_by_failed_deps returns TRUE when blocked", {
   # Dependency failed and is not installed
-  expect_true(renvvv:::.is_blocked_by_failed_deps(
+  expect_true(.is_blocked_by_failed_deps(
     pkg_name = "pkgA",
     failed_pkgs = c("pkgB"),
     installed_now = c(),

@@ -403,23 +403,15 @@ skip_if_dep_unavailable will be ignored."
 
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
-      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
-        x_deps <- lockfile_deps[[x]]
-        if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- failed_pkgs[
-            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
-          ]
-          if (length(blocking) > 0L) {
-            cli::cli_alert_warning(
-              paste0(
-                "Skipping {.pkg {x}}: dep ",
-                "{.pkg {blocking}} failed and is not installed."
-              )
-            )
-            failed_pkgs <- c(failed_pkgs, x)
-            next
-          }
-        }
+      if (.is_blocked_by_failed_deps(
+        pkg_name = x,
+        failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
+        skip_if_dep_unavailable = skip_if_dep_unavailable,
+        lockfile_deps = lockfile_deps
+      )) {
+        failed_pkgs <- c(failed_pkgs, x)
+        next
       }
       tryCatch(
         renv::restore(packages = x, transactional = FALSE),
@@ -498,6 +490,32 @@ skip_if_dep_unavailable will be ignored."
   }
 }
 
+# Internal function to check if a package is blocked by failed dependencies
+.is_blocked_by_failed_deps <- function(pkg_name,
+                                        failed_pkgs,
+                                        installed_now,
+                                        skip_if_dep_unavailable,
+                                        lockfile_deps) {
+  if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
+    x_deps <- lockfile_deps[[pkg_name]]
+    if (!is.null(x_deps) && length(x_deps) > 0L) {
+      blocking <- failed_pkgs[
+        failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
+      ]
+      if (length(blocking) > 0L) {
+        cli::cli_alert_warning(
+          paste0(
+            "Skipping {.pkg {pkg_name}}: dep ",
+            "{.pkg {blocking}} failed and is not installed."
+          )
+        )
+        return(TRUE)
+      }
+    }
+  }
+  FALSE
+}
+
 # Internal function to install any remaining packages
 .renv_install_remaining <- function(pkg, biocmanager_install, is_bioc,
                                      skip_if_dep_unavailable = TRUE,
@@ -542,23 +560,15 @@ skip_if_dep_unavailable will be ignored."
   for (x in pkg_still_missing) {
     pkg_name <- sub("^.*/", "", x)
     if (!requireNamespace(pkg_name, quietly = TRUE)) {
-      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
-        x_deps <- lockfile_deps[[pkg_name]]
-        if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- failed_pkgs[
-            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
-          ]
-          if (length(blocking) > 0L) {
-            cli::cli_alert_warning(
-              paste0(
-                "Skipping {.pkg {pkg_name}}: dep ",
-                "{.pkg {blocking}} failed and is not installed."
-              )
-            )
-            failed_pkgs <- c(failed_pkgs, pkg_name)
-            next
-          }
-        }
+      if (.is_blocked_by_failed_deps(
+        pkg_name = pkg_name,
+        failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
+        skip_if_dep_unavailable = skip_if_dep_unavailable,
+        lockfile_deps = lockfile_deps
+      )) {
+        failed_pkgs <- c(failed_pkgs, pkg_name)
+        next
       }
       .renv_install(x, biocmanager_install, is_bioc)
       if (!requireNamespace(pkg_name, quietly = TRUE)) {
