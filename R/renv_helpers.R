@@ -196,6 +196,14 @@ skip_if_dep_unavailable will be ignored."
   # Read lockfile directly
   lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
 
+  if (length(lockfile_list_pkg) == 0L) {
+    return(list(
+      regular = character(),
+      bioc = character(),
+      gh = character()
+    ))
+  }
+
   pkg_names <- names(lockfile_list_pkg)
 
   remote_usernames <- vapply(
