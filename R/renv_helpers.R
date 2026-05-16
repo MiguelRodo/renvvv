@@ -102,11 +102,16 @@
   return(lockfile_path)
 }
 
+# Extract package name from a remote spec (e.g. "user/repo" -> "repo")
+.extract_pkg_name <- function(x) {
+  sub("^.*/", "", x)
+}
+
 # Internal helper to check which packages are missing
 .get_missing_pkgs <- function(pkgs) {
   if (length(pkgs) == 0L) return(character(0))
   pkgs[!vapply(pkgs, function(x) {
-    requireNamespace(sub("^.*/", "", x), quietly = TRUE)
+    requireNamespace(.extract_pkg_name(x), quietly = TRUE)
   }, logical(1))]
 }
 
@@ -119,6 +124,19 @@
   pkgs[nzchar(pkgs)]
 }
 
+# Extract dependencies from a single package's Requirements field.
+.deps_from_requirements_pkg <- function(pkg_info) {
+  reqs <- pkg_info$Requirements
+  if (is.null(reqs)) return(character(0))
+
+  if (is.character(reqs)) {
+    return(as.character(reqs))
+  } else if (is.list(reqs)) {
+    return(names(reqs))
+  }
+  character(0)
+}
+
 # Strategy 1 (renv 0.15.0 - 1.0.x): use the pre-computed Requirements field.
 # Returns NULL if no package has a Requirements field (wrong lockfile format).
 .deps_from_requirements <- function(lockfile_list_pkg) {
@@ -126,10 +144,7 @@
     vapply(lockfile_list_pkg, function(x) !is.null(x$Requirements), logical(1))
   )
   if (!has_requirements) return(NULL)
-  lapply(lockfile_list_pkg, function(pkg_info) {
-    reqs <- pkg_info$Requirements
-    if (is.null(reqs)) character(0) else as.character(reqs)
-  })
+  lapply(lockfile_list_pkg, .deps_from_requirements_pkg)
 }
 
 # Strategy 2 (renv 1.1.0+): parse Imports / Depends / LinkingTo fields.
@@ -140,10 +155,38 @@
     any(dep_fields %in% names(x))
   }, logical(1)))
   if (!has_fields) return(NULL)
-  lapply(lockfile_list_pkg, function(pkg_info) {
-    raw <- unlist(pkg_info[intersect(dep_fields, names(pkg_info))],
-                  use.names = FALSE)
-    unique(.parse_dep_field(raw))
+  lapply(lockfile_list_pkg, .extract_pkg_deps)
+}
+
+.extract_pkg_deps <- function(pkg_info) {
+  deps <- character(0)
+  fields <- c("Depends", "Imports", "LinkingTo")
+
+  for (field in fields) {
+    if (!is.null(pkg_info[[field]])) {
+      field_deps <- unlist(strsplit(pkg_info[[field]], ",\\s*"))
+      parsed <- unlist(lapply(field_deps, .parse_dep_field))
+      deps <- c(deps, parsed)
+    }
+  }
+
+  unique(deps[deps != "R"])
+}
+
+# Internal function to read packages from the renv lockfile
+.renv_lockfile_read_pkgs <- function() {
+  tryCatch({
+    lockfile_path <- renv::paths$lockfile()
+    if (!file.exists(lockfile_path)) {
+      return(list())
+    }
+    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+    if (is.null(lockfile_list_pkg)) {
+      return(list())
+    }
+    lockfile_list_pkg
+  }, error = function(e) {
+    list()
   })
 }
 
@@ -155,30 +198,19 @@
 # Two strategies are tried in order:
 #   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
 #   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
-.renv_lockfile_deps_get <- function() {
-  lockfile_path <- tryCatch({
-    renv::paths$lockfile()
-  }, error = function(e) {
-    cli::cli_alert_warning(
-      paste0("Could not determine lockfile path ",
-             "(skip_if_dep_unavailable ignored): {e$message}")
-    )
-    NULL
-  })
-
-  if (is.null(lockfile_path) || !file.exists(lockfile_path)) {
-    return(list())
+<<<<<<< HEAD
+.renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
+  if (is.null(lockfile_list_pkg)) {
+    lockfile_list_pkg <- tryCatch({
+      .renv_lockfile_read_pkgs()
+    }, error = function(e) {
+      cli::cli_alert_warning(
+        paste0("Could not read lockfile Packages ",
+               "(skip_if_dep_unavailable ignored): {e$message}")
+      )
+      NULL
+    })
   }
-
-  lockfile_list_pkg <- tryCatch({
-    renv::lockfile_read(file = lockfile_path)$Packages
-  }, error = function(e) {
-    cli::cli_alert_warning(
-      paste0("Could not read lockfile Packages ",
-             "(skip_if_dep_unavailable ignored): {e$message}")
-    )
-    NULL
-  })
 
   if (is.null(lockfile_list_pkg) || length(lockfile_list_pkg) == 0) {
     return(list())
@@ -191,45 +223,80 @@
   if (!is.null(deps)) return(deps)
 
   cli::cli_alert_warning(
-    "Could not extract package dependencies from lockfile; \\
-skip_if_dep_unavailable will be ignored."
+    paste0("Could not extract package dependencies from lockfile; ",
+           "skip_if_dep_unavailable will be ignored.")
+  )
+  list()
+}
+.renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
+  if (is.null(lockfile_list_pkg)) {
+    lockfile_list_pkg <- tryCatch({
+      .renv_lockfile_read_pkgs()
+    }, error = function(e) {
+      cli::cli_alert_warning(
+        paste0("Could not read lockfile Packages ",
+               "(skip_if_dep_unavailable ignored): {e$message}")
+      )
+      NULL
+    })
+  }
+
+  if (is.null(lockfile_list_pkg) || length(lockfile_list_pkg) == 0) {
+    return(list())
+  }
+
+  deps <- .deps_from_requirements(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  deps <- .deps_from_description_fields(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  cli::cli_alert_warning(
+    paste0("Could not extract package dependencies from lockfile; ",
+           "skip_if_dep_unavailable will be ignored.")
   )
   list()
 }
 
 #' @importFrom utils installed.packages
 # Internal function to get package lists from the renv lockfile
-.renv_lockfile_pkg_get <- function() {
-  lockfile_path <- renv::paths$lockfile()
-
-  # Read lockfile directly
-  lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
-
-  pkg_vec_regular <- character()
-  pkg_vec_bioc <- character()
-  pkg_vec_gh <- character()
-
-  for (package_name in names(lockfile_list_pkg)) {
-    package_info <- lockfile_list_pkg[[package_name]]
-    remote_username <- package_info$RemoteUsername
-    source <- tolower(package_info$Source)
-
-    if (is.null(remote_username)) {
-      is_bioc <- grepl("bioc", source)
-      if (is_bioc) {
-        pkg_vec_bioc <- c(pkg_vec_bioc, package_name)
-      } else {
-        pkg_vec_regular <- c(pkg_vec_regular, package_name)
-      }
-    } else {
-      pkg_vec_gh <- c(pkg_vec_gh, paste0(remote_username, "/", package_name))
-    }
+.renv_lockfile_pkg_get <- function(lockfile_list_pkg = NULL) {
+  if (is.null(lockfile_list_pkg)) {
+    lockfile_list_pkg <- .renv_lockfile_read_pkgs()
   }
 
+  if (length(lockfile_list_pkg) == 0L) {
+    return(list(
+      regular = character(),
+      bioc = character(),
+      gh = character()
+    ))
+  }
+
+  pkg_names <- names(lockfile_list_pkg)
+
+  remote_usernames <- vapply(
+    lockfile_list_pkg,
+    function(x) if (is.null(x$RemoteUsername)) "" else x$RemoteUsername,
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  sources <- vapply(
+    lockfile_list_pkg,
+    function(x) if (is.null(x$Source)) "" else tolower(x$Source),
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  is_gh <- remote_usernames != ""
+  is_bioc <- !is_gh & grepl("bioc", sources)
+  is_regular <- !is_gh & !is_bioc
+
   list(
-    regular = pkg_vec_regular,
-    bioc = pkg_vec_bioc,
-    gh = pkg_vec_gh
+    regular = pkg_names[is_regular],
+    bioc = pkg_names[is_bioc],
+    gh = paste0(remote_usernames[is_gh], "/", pkg_names[is_gh])
   )
 }
 
@@ -240,8 +307,9 @@ skip_if_dep_unavailable will be ignored."
                                                restore,
                                                biocmanager_install,
                                                skip = character(0),
-                                               skip_if_dep_unavailable = TRUE) {
-  lockfile_deps <- .renv_lockfile_deps_get()
+                                               skip_if_dep_unavailable = TRUE,
+                                               lockfile_list_pkg = NULL) {
+  lockfile_deps <- .renv_lockfile_deps_get(lockfile_list_pkg)
 
   # CRAN Packages
   .renv_restore_or_update_actual_wrapper(
@@ -292,13 +360,13 @@ skip_if_dep_unavailable will be ignored."
                                                          lockfile_deps = list()) {
   # Filter out packages in the skip list
   # For GitHub packages, extract package name from "user/package" format
-  pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
   pkg_to_process <- pkg[!pkg_names %in% skip]
   pkg_skipped <- pkg[pkg_names %in% skip]
 
   # Report skipped packages
   if (length(pkg_skipped) > 0L) {
-    skipped_names <- sapply(pkg_skipped, function(x) sub("^.*/", "", x))
+    skipped_names <- vapply(pkg_skipped, .extract_pkg_name, character(1))
     action <- if (restore) "restoring" else "updating"
     cli::cli_alert_info(
       "Skipping {action} {source} packages: {.pkg {skipped_names}}"
@@ -347,7 +415,7 @@ skip_if_dep_unavailable will be ignored."
   }
 
   # Extract package names from possible remotes
-  pkg_names <- sapply(pkg, function(x) sub("^.*/", "", x))
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
 
   if (restore) {
     cli::cli_alert_info(
@@ -412,23 +480,15 @@ skip_if_dep_unavailable will be ignored."
 
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
-      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
-        x_deps <- lockfile_deps[[x]]
-        if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- failed_pkgs[
-            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
-          ]
-          if (length(blocking) > 0L) {
-            cli::cli_alert_warning(
-              paste0(
-                "Skipping {.pkg {x}}: dep ",
-                "{.pkg {blocking}} failed and is not installed."
-              )
-            )
-            failed_pkgs <- c(failed_pkgs, x)
-            next
-          }
-        }
+      if (.is_blocked_by_failed_deps(
+        pkg_name = x,
+        failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
+        skip_if_dep_unavailable = skip_if_dep_unavailable,
+        lockfile_deps = lockfile_deps
+      )) {
+        failed_pkgs <- c(failed_pkgs, x)
+        next
       }
       tryCatch(
         renv::restore(packages = x, transactional = FALSE),
@@ -441,7 +501,7 @@ skip_if_dep_unavailable will be ignored."
       if (!requireNamespace(x, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, x)
       } else {
-        installed_now <- rownames(installed.packages())
+        installed_now <- c(installed_now, x)
       }
     }
   }
@@ -507,6 +567,32 @@ skip_if_dep_unavailable will be ignored."
   }
 }
 
+# Internal function to check if a package is blocked by failed dependencies
+.is_blocked_by_failed_deps <- function(pkg_name,
+                                        failed_pkgs,
+                                        installed_now,
+                                        skip_if_dep_unavailable,
+                                        lockfile_deps) {
+  if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
+    x_deps <- lockfile_deps[[pkg_name]]
+    if (!is.null(x_deps) && length(x_deps) > 0L) {
+      blocking <- failed_pkgs[
+        failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
+      ]
+      if (length(blocking) > 0L) {
+        cli::cli_alert_warning(
+          paste0(
+            "Skipping {.pkg {pkg_name}}: dep ",
+            "{.pkg {blocking}} failed and is not installed."
+          )
+        )
+        return(TRUE)
+      }
+    }
+  }
+  FALSE
+}
+
 # Internal function to install any remaining packages
 .renv_install_remaining <- function(pkg, biocmanager_install, is_bioc,
                                      skip_if_dep_unavailable = TRUE,
@@ -515,7 +601,7 @@ skip_if_dep_unavailable will be ignored."
 
   installed_pkgs <- rownames(installed.packages())
   pkg_remaining <- pkg[
-    !sapply(pkg, function(x) sub("^.*/", "", x)) %in% installed_pkgs
+    !vapply(pkg, .extract_pkg_name, character(1)) %in% installed_pkgs
   ]
 
   if (length(pkg_remaining) == 0L) {
@@ -549,31 +635,23 @@ skip_if_dep_unavailable will be ignored."
 
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
-    pkg_name <- sub("^.*/", "", x)
+    pkg_name <- .extract_pkg_name(x)
     if (!requireNamespace(pkg_name, quietly = TRUE)) {
-      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
-        x_deps <- lockfile_deps[[pkg_name]]
-        if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- failed_pkgs[
-            failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
-          ]
-          if (length(blocking) > 0L) {
-            cli::cli_alert_warning(
-              paste0(
-                "Skipping {.pkg {pkg_name}}: dep ",
-                "{.pkg {blocking}} failed and is not installed."
-              )
-            )
-            failed_pkgs <- c(failed_pkgs, pkg_name)
-            next
-          }
-        }
+      if (.is_blocked_by_failed_deps(
+        pkg_name = pkg_name,
+        failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
+        skip_if_dep_unavailable = skip_if_dep_unavailable,
+        lockfile_deps = lockfile_deps
+      )) {
+        failed_pkgs <- c(failed_pkgs, pkg_name)
+        next
       }
       .renv_install(x, biocmanager_install, is_bioc)
       if (!requireNamespace(pkg_name, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, pkg_name)
       } else {
-        installed_now <- rownames(installed.packages())
+        installed_now <- c(installed_now, pkg_name)
       }
     }
   }

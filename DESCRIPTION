@@ -19,8 +19,10 @@ Imports:
     renv,
     cli
 Suggests:
+    mockery,
     BiocManager,
     knitr,
+    mockery,
     rcmdcheck,
     rmarkdown,
     testthat (>= 3.0.0)

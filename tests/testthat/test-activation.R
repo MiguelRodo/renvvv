@@ -1,7 +1,7 @@
 # Tests for renv project activation checking
 
 test_that(".check_renv_activation function exists", {
-  expect_true(is.function(renvvv:::.check_renv_activation))
+  expect_true(is.function(.check_renv_activation))
 })
 
 test_that(".check_renv_activation returns NULL when not in renv project", {
@@ -14,7 +14,7 @@ test_that(".check_renv_activation returns NULL when not in renv project", {
     unlink(tmp, recursive = TRUE)
   })
 
-  result <- renvvv:::.check_renv_activation()
+  result <- .check_renv_activation()
   expect_null(result)
 })
 
@@ -28,7 +28,7 @@ test_that(".check_renv_activation returns NULL when project is already active", 
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Project should be active after setup
-  result <- suppressMessages(renvvv:::.check_renv_activation())
+  result <- suppressMessages(.check_renv_activation())
   expect_null(result)
 })
 
@@ -68,7 +68,7 @@ test_that(".check_renv_activation normalizes paths correctly", {
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Test that activation check doesn't fail due to path normalization
-  result <- suppressMessages(renvvv:::.check_renv_activation())
+  result <- suppressMessages(.check_renv_activation())
   expect_null(result)
 })
 
@@ -87,7 +87,7 @@ test_that(".check_renv_activation handles non-interactive mode", {
   ctx <- .setup_renv_project()
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
-  expect_silent(suppressMessages(renvvv:::.check_renv_activation()))
+  expect_silent(suppressMessages(.check_renv_activation()))
 })
 
 test_that("renvvv_restore calls activation check", {
