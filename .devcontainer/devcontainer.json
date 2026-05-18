@@ -4,15 +4,9 @@
     "vscode": {
       "extensions": [
         "quarto.quarto",
-        "mathematic.vscode-pdf"
+        "mathematic.vscode-pdf",
+        "reditorsupport.r"
       ]
-    },
-    "codespaces": {
-      "repositories": {
-        "MiguelRodo/eval": {
-          "permissions": "write-all"
-        }
-      }
     }
   }
 }
