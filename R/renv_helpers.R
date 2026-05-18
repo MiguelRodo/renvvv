@@ -348,13 +348,13 @@
 
 # Wrapper function for processing package groups
 .renv_restore_or_update_actual_wrapper <- function(pkg,
-                                                         act,
-                                                         restore,
-                                                         source,
-                                                         biocmanager_install,
-                                                         skip = character(0),
-                                                         skip_if_dep_unavailable = TRUE,
-                                                         lockfile_deps = list()) {
+                                                   act,
+                                                   restore,
+                                                   source,
+                                                   biocmanager_install,
+                                                   skip = character(0),
+                                                   skip_if_dep_unavailable = TRUE,
+                                                   lockfile_deps = list()) {
   # Filter out packages in the skip list
   # For GitHub packages, extract package name from "user/package" format
   pkg_names <- sub("^.*/", "", pkg)
@@ -384,3 +384,9 @@
       biocmanager_install,
       is_bioc = (source == "Bioconductor"),
       skip_if_dep_unavailable = skip_if_dep_unavailable,
+      lockfile_deps = lockfile_deps
+    )
+  }
+
+  invisible(TRUE)
+}
