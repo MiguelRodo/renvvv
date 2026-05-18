@@ -25,6 +25,7 @@ Suggests:
     mockery,
     rcmdcheck,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    microbenchmkark
 Config/testthat/edition: 3
 VignetteBuilder: knitr
