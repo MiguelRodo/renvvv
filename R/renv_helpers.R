@@ -434,8 +434,9 @@ skip_if_dep_unavailable will be ignored."
                                      lockfile_deps = list()) {
   .ensure_cli()
 
-  installed_pkgs <- rownames(installed.packages())
-  pkg_remaining <- pkg[!pkg %in% installed_pkgs]
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
+  missing_names <- .get_missing_pkgs(pkg_names)
+  pkg_remaining <- pkg[pkg_names %in% missing_names]
 
   if (length(pkg_remaining) == 0L) {
     cli::cli_alert_success("All packages restored successfully.")

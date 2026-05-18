@@ -109,7 +109,7 @@ test_that("renvvv_restore_and_update handles corrupted lockfile with invalid pac
   lockfile$Packages$corruptedpkg <- list(
     Package = "corruptedpkg",
     Version = "100.0.1",
-    Source = "Repository",
+    Source = "unknown",
     Repository = "CRAN",
     Requirements = character(0)
   )
