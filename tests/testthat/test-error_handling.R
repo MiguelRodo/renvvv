@@ -1,16 +1,18 @@
 testthat::skip_if_not_installed("mockery")
+
 test_that("error handlers are triggered correctly when packages fail", {
   skip_if_not_installed("mockery")
-  # Mock renv::install and renv::restore to always throw errors
-  mockery::stub(renvvv:::.renv_restore_remaining, "renv::restore", function(...) stop("Mocked restore error"))
-  mockery::stub(renvvv:::.renv_install_remaining, "renv::install", function(...) stop("Mocked install error"))
-  # We must mock .renv_install itself inside .renv_install_remaining so it doesn't call it
-  mockery::stub(renvvv:::.renv_install_remaining, ".renv_install", function(...) stop("Mocked BiocManager install error"))
+  
+  # Mock renv::restore to throw an error
+  mockery::stub(.renv_restore_remaining, "renv::restore", function(...) stop("Mocked restore error"))
+  
+  # Mock .renv_install inside .renv_install_remaining so it doesn't actually call it
+  mockery::stub(.renv_install_remaining, ".renv_install", function(...) stop("Mocked install error"))
 
   # Execute a deliberately failing restore and verify the expected message
   expect_message(
     expect_error(
-      renvvv:::.renv_restore_remaining("non_existent_pkg_1"),
+      .renv_restore_remaining("non_existent_pkg_1"),
       NA # we expect it to swallow the error internally and continue
     ),
     "Failed to restore package: .*non_existent_pkg_1.*Error: Mocked restore error"
@@ -18,15 +20,15 @@ test_that("error handlers are triggered correctly when packages fail", {
 
   # Execute deliberately failing installs
   expect_error(
-    renvvv:::.renv_install_remaining("non_existent_pkg_2", biocmanager_install = FALSE, is_bioc = FALSE),
+    .renv_install_remaining("non_existent_pkg_2", biocmanager_install = FALSE, is_bioc = FALSE),
     NA
   )
   expect_error(
-    renvvv:::.renv_install_remaining("non_existent_pkg_bioc", biocmanager_install = TRUE, is_bioc = TRUE),
+    .renv_install_remaining("non_existent_pkg_bioc", biocmanager_install = TRUE, is_bioc = TRUE),
     NA
   )
   expect_error(
-    renvvv:::.renv_install_remaining("non_existent_pkg_bioc_renv", biocmanager_install = FALSE, is_bioc = TRUE),
+    .renv_install_remaining("non_existent_pkg_bioc_renv", biocmanager_install = FALSE, is_bioc = TRUE),
     NA
   )
 })
@@ -58,4 +60,33 @@ test_that(".renv_install error handler for BiocManager works", {
   # Verify the arguments passed to cli_alert_danger contained our message
   args <- mockery::mock_args(mock_danger)[[1]]
   expect_match(args[[1]], "Failed to install Bioconductor packages using BiocManager")
+})
+
+test_that(".renv_lockfile_read_pkgs handles lockfile path error gracefully", {
+  # Mock renv::paths$lockfile to throw an error
+  mockery::stub(.renv_lockfile_read_pkgs, "renv::paths", list(lockfile = function(...) stop("Mocked lockfile path error")))
+
+  # The error should be caught internally, silently returning an empty list.
+  result <- .renv_lockfile_read_pkgs()
+  
+  expect_type(result, "list")
+  expect_length(result, 0)
+})
+
+test_that(".renv_lockfile_read_pkgs handles lockfile read error gracefully", {
+  # Mock lockfile path so file.exists passes
+  tmp_lock <- tempfile("mock_renv_", fileext = ".lock")
+  file.create(tmp_lock)
+  on.exit(unlink(tmp_lock))
+
+  mockery::stub(.renv_lockfile_read_pkgs, "renv::paths", list(lockfile = function(...) tmp_lock))
+
+  # Mock renv::lockfile_read to throw an error
+  mockery::stub(.renv_lockfile_read_pkgs, "renv::lockfile_read", function(...) stop("Mocked lockfile read error"))
+
+  # The error should be caught internally, silently returning an empty list
+  result <- .renv_lockfile_read_pkgs()
+  
+  expect_type(result, "list")
+  expect_length(result, 0)
 })

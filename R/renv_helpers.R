@@ -198,35 +198,62 @@
 #   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
 #   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
 .renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
-  tryCatch({
-    if (is.null(lockfile_list_pkg)) {
-      lockfile_list_pkg <- .renv_lockfile_read_pkgs()
-    }
-
-    if (length(lockfile_list_pkg) == 0) {
-      return(list())
-    }
-
-    deps <- .deps_from_requirements(lockfile_list_pkg)
-    if (!is.null(deps)) return(deps)
-
-    deps <- .deps_from_description_fields(lockfile_list_pkg)
-    if (!is.null(deps)) return(deps)
-
-    cli::cli_alert_warning(
-      "Could not extract package dependencies from lockfile; \\
-skip_if_dep_unavailable will be ignored."
-    )
-    list()
-  }, error = function(e) {
-    cli::cli_alert_warning(
-      paste0(
-        "Could not extract package dependencies from lockfile ",
-        "(skip_if_dep_unavailable ignored): {e$message}"
+  if (is.null(lockfile_list_pkg)) {
+    lockfile_list_pkg <- tryCatch({
+      .renv_lockfile_read_pkgs()
+    }, error = function(e) {
+      cli::cli_alert_warning(
+        paste0("Could not read lockfile Packages ",
+               "(skip_if_dep_unavailable ignored): {e$message}")
       )
-    )
-    list()
-  })
+      NULL
+    })
+  }
+
+  if (is.null(lockfile_list_pkg) || length(lockfile_list_pkg) == 0) {
+    return(list())
+  }
+
+  deps <- .deps_from_requirements(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  deps <- .deps_from_description_fields(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  cli::cli_alert_warning(
+    paste0("Could not extract package dependencies from lockfile; ",
+           "skip_if_dep_unavailable will be ignored.")
+  )
+  list()
+}
+.renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
+  if (is.null(lockfile_list_pkg)) {
+    lockfile_list_pkg <- tryCatch({
+      .renv_lockfile_read_pkgs()
+    }, error = function(e) {
+      cli::cli_alert_warning(
+        paste0("Could not read lockfile Packages ",
+               "(skip_if_dep_unavailable ignored): {e$message}")
+      )
+      NULL
+    })
+  }
+
+  if (is.null(lockfile_list_pkg) || length(lockfile_list_pkg) == 0) {
+    return(list())
+  }
+
+  deps <- .deps_from_requirements(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  deps <- .deps_from_description_fields(lockfile_list_pkg)
+  if (!is.null(deps)) return(deps)
+
+  cli::cli_alert_warning(
+    paste0("Could not extract package dependencies from lockfile; ",
+           "skip_if_dep_unavailable will be ignored.")
+  )
+  list()
 }
 
 # Internal function to get package lists from the renv lockfile

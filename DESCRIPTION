@@ -19,6 +19,7 @@ Imports:
     renv,
     cli
 Suggests:
+    mockery,
     BiocManager,
     knitr,
     mockery,
