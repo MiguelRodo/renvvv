@@ -102,6 +102,11 @@
   return(lockfile_path)
 }
 
+# Extract package name from a remote spec (e.g. "user/repo" -> "repo")
+.extract_pkg_name <- function(x) {
+  sub("^.*/", "", x)
+}
+
 # Internal helper to check which packages are missing
 .get_missing_pkgs <- function(pkgs) {
   if (length(pkgs) == 0L) return(character(0))
@@ -118,6 +123,19 @@
   pkgs[nzchar(pkgs)]
 }
 
+# Extract dependencies from a single package's Requirements field.
+.deps_from_requirements_pkg <- function(pkg_info) {
+  reqs <- pkg_info$Requirements
+  if (is.null(reqs)) return(character(0))
+
+  if (is.character(reqs)) {
+    return(as.character(reqs))
+  } else if (is.list(reqs)) {
+    return(names(reqs))
+  }
+  character(0)
+}
+
 # Strategy 1 (renv 0.15.0 - 1.0.x): use the pre-computed Requirements field.
 # Returns NULL if no package has a Requirements field (wrong lockfile format).
 .deps_from_requirements <- function(lockfile_list_pkg) {
@@ -125,10 +143,7 @@
     vapply(lockfile_list_pkg, function(x) !is.null(x$Requirements), logical(1))
   )
   if (!has_requirements) return(NULL)
-  lapply(lockfile_list_pkg, function(pkg_info) {
-    reqs <- pkg_info$Requirements
-    if (is.null(reqs)) character(0) else as.character(reqs)
-  })
+  lapply(lockfile_list_pkg, .deps_from_requirements_pkg)
 }
 
 # Strategy 2 (renv 1.1.0+): parse Imports / Depends / LinkingTo fields.
@@ -139,10 +154,38 @@
     any(dep_fields %in% names(x))
   }, logical(1)))
   if (!has_fields) return(NULL)
-  lapply(lockfile_list_pkg, function(pkg_info) {
-    raw <- unlist(pkg_info[intersect(dep_fields, names(pkg_info))],
-                  use.names = FALSE)
-    unique(.parse_dep_field(raw))
+  lapply(lockfile_list_pkg, .extract_pkg_deps)
+}
+
+.extract_pkg_deps <- function(pkg_info) {
+  deps <- character(0)
+  fields <- c("Depends", "Imports", "LinkingTo")
+
+  for (field in fields) {
+    if (!is.null(pkg_info[[field]])) {
+      field_deps <- unlist(strsplit(pkg_info[[field]], ",\\s*"))
+      parsed <- unlist(lapply(field_deps, .parse_dep_field))
+      deps <- c(deps, parsed)
+    }
+  }
+
+  unique(deps[deps != "R"])
+}
+
+# Internal function to read packages from the renv lockfile
+.renv_lockfile_read_pkgs <- function() {
+  tryCatch({
+    lockfile_path <- renv::paths$lockfile()
+    if (!file.exists(lockfile_path)) {
+      return(list())
+    }
+    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+    if (is.null(lockfile_list_pkg)) {
+      return(list())
+    }
+    lockfile_list_pkg
+  }, error = function(e) {
+    list()
   })
 }
 
@@ -154,13 +197,12 @@
 # Two strategies are tried in order:
 #   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
 #   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
-.renv_lockfile_deps_get <- function() {
+.renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
   tryCatch({
-    lockfile_path <- renv::paths$lockfile()
-    if (!file.exists(lockfile_path)) {
-      return(list())
+    if (is.null(lockfile_list_pkg)) {
+      lockfile_list_pkg <- .renv_lockfile_read_pkgs()
     }
-    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
+
     if (length(lockfile_list_pkg) == 0) {
       return(list())
     }
@@ -180,46 +222,51 @@ skip_if_dep_unavailable will be ignored."
     cli::cli_alert_warning(
       paste0(
         "Could not extract package dependencies from lockfile ",
-        "(skip_if_dep_unavailable ignored): {msg}"
-      ),
-      msg = e$message
+        "(skip_if_dep_unavailable ignored): {e$message}"
+      )
     )
     list()
   })
 }
 
 # Internal function to get package lists from the renv lockfile
-.renv_lockfile_pkg_get <- function() {
-  lockfile_path <- renv::paths$lockfile()
-
-  # Read lockfile directly
-  lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
-
-  pkg_vec_regular <- character()
-  pkg_vec_bioc <- character()
-  pkg_vec_gh <- character()
-
-  for (package_name in names(lockfile_list_pkg)) {
-    package_info <- lockfile_list_pkg[[package_name]]
-    remote_username <- package_info$RemoteUsername
-    source <- tolower(package_info$Source)
-
-    if (is.null(remote_username)) {
-      is_bioc <- grepl("bioc", source)
-      if (is_bioc) {
-        pkg_vec_bioc <- c(pkg_vec_bioc, package_name)
-      } else {
-        pkg_vec_regular <- c(pkg_vec_regular, package_name)
-      }
-    } else {
-      pkg_vec_gh <- c(pkg_vec_gh, paste0(remote_username, "/", package_name))
-    }
+.renv_lockfile_pkg_get <- function(lockfile_list_pkg = NULL) {
+  if (is.null(lockfile_list_pkg)) {
+    lockfile_list_pkg <- .renv_lockfile_read_pkgs()
   }
 
+  if (length(lockfile_list_pkg) == 0L) {
+    return(list(
+      regular = character(),
+      bioc = character(),
+      gh = character()
+    ))
+  }
+
+  pkg_names <- names(lockfile_list_pkg)
+
+  remote_usernames <- vapply(
+    lockfile_list_pkg,
+    function(x) if (is.null(x$RemoteUsername)) "" else x$RemoteUsername,
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  sources <- vapply(
+    lockfile_list_pkg,
+    function(x) if (is.null(x$Source)) "" else tolower(x$Source),
+    character(1),
+    USE.NAMES = FALSE
+  )
+
+  is_gh <- remote_usernames != ""
+  is_bioc <- !is_gh & grepl("bioc", sources)
+  is_regular <- !is_gh & !is_bioc
+
   list(
-    regular = pkg_vec_regular,
-    bioc = pkg_vec_bioc,
-    gh = pkg_vec_gh
+    regular = pkg_names[is_regular],
+    bioc = pkg_names[is_bioc],
+    gh = paste0(remote_usernames[is_gh], "/", pkg_names[is_gh])
   )
 }
 
@@ -230,8 +277,9 @@ skip_if_dep_unavailable will be ignored."
                                                restore,
                                                biocmanager_install,
                                                skip = character(0),
-                                               skip_if_dep_unavailable = TRUE) {
-  lockfile_deps <- .renv_lockfile_deps_get()
+                                               skip_if_dep_unavailable = TRUE,
+                                               lockfile_list_pkg = NULL) {
+  lockfile_deps <- .renv_lockfile_deps_get(lockfile_list_pkg)
 
   # CRAN Packages
   .renv_restore_or_update_actual_wrapper(
@@ -309,267 +357,3 @@ skip_if_dep_unavailable will be ignored."
       biocmanager_install,
       is_bioc = (source == "Bioconductor"),
       skip_if_dep_unavailable = skip_if_dep_unavailable,
-      lockfile_deps = lockfile_deps
-    )
-  } else {
-    action <- if (restore) "restoring" else "installing"
-    cli::cli_alert_info("Skipping {action} {source} packages.")
-  }
-}
-
-# Internal function to restore or update packages
-.renv_restore_update_actual <- function(pkg, restore, biocmanager_install,
-                                         is_bioc,
-                                         skip_if_dep_unavailable = TRUE,
-                                         lockfile_deps = list()) {
-  if (length(pkg) == 0L) {
-    return(invisible(FALSE))
-  }
-
-  .ensure_cli()
-
-  pkg_type <- if (is_bioc) {
-    "Bioconductor"
-  } else if (all(grepl("/", pkg))) {
-    "GitHub"
-  } else {
-    "CRAN"
-  }
-
-  # Extract package names from possible remotes
-  pkg_names <- sub("^.*/", "", pkg)
-
-  if (restore) {
-    cli::cli_alert_info(
-      "Attempting to restore {pkg_type} packages: {.pkg {pkg_names}}"
-    )
-    # Attempt to restore packages
-    tryCatch(
-      renv::restore(packages = pkg_names, transactional = FALSE),
-      error = function(e) {
-        cli::cli_alert_danger(
-          "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}. Error: {msg}",
-          msg = e$message
-        )
-      }
-    )
-    cli::cli_alert_info("Checking for packages that failed to restore.")
-    .renv_restore_remaining(
-      pkg_names,
-      skip_if_dep_unavailable = skip_if_dep_unavailable,
-      lockfile_deps = lockfile_deps
-    )
-  } else {
-    cli::cli_alert_info(
-      "Installing latest {pkg_type} packages: {.pkg {pkg_names}}"
-    )
-    # Install the latest versions
-    .renv_install(pkg, biocmanager_install, is_bioc)
-  }
-
-  cli::cli_alert_info("Checking for packages that are still not installed.")
-  # Install any remaining packages that were not installed
-  .renv_install_remaining(
-    pkg,
-    biocmanager_install,
-    is_bioc,
-    skip_if_dep_unavailable = skip_if_dep_unavailable,
-    lockfile_deps = lockfile_deps
-  )
-  invisible(TRUE)
-}
-
-# Internal function to restore remaining packages individually
-.renv_restore_remaining <- function(pkg,
-                                     skip_if_dep_unavailable = TRUE,
-                                     lockfile_deps = list()) {
-  .ensure_cli()
-
-  pkg_remaining <- .get_missing_pkgs(pkg)
-
-  if (length(pkg_remaining) == 0L) {
-    cli::cli_alert_success("All packages restored successfully.")
-    return(invisible(FALSE))
-  }
-
-  cli::cli_alert_warning(
-    "Packages that failed to restore: {.pkg {pkg_remaining}}"
-  )
-  cli::cli_alert_info("Attempting to restore packages individually.")
-
-  failed_pkgs <- character(0)
-
-  for (x in pkg_remaining) {
-    if (!requireNamespace(x, quietly = TRUE)) {
-      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
-        x_deps <- lockfile_deps[[x]]
-        if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- .get_missing_pkgs(failed_pkgs[failed_pkgs %in% x_deps])
-          if (length(blocking) > 0L) {
-            cli::cli_alert_warning(
-              paste0(
-                "Skipping {.pkg {x}}: dep ",
-                "{.pkg {blocking}} failed and is not installed."
-              )
-            )
-            failed_pkgs <- c(failed_pkgs, x)
-            next
-          }
-        }
-      }
-      tryCatch(
-        renv::restore(packages = x, transactional = FALSE),
-        error = function(e) {
-          cli::cli_alert_danger(
-            "Failed to restore package: {.pkg {x}}. Error: {msg}",
-            msg = e$message
-          )
-        }
-      )
-      if (!requireNamespace(x, quietly = TRUE)) {
-        failed_pkgs <- c(failed_pkgs, x)
-      }
-    }
-  }
-}
-
-# Internal function to install packages
-.renv_install <- function(pkg, biocmanager_install, is_bioc) {
-  .ensure_cli()
-
-  if (is_bioc) {
-    if (biocmanager_install) {
-      if (!requireNamespace("BiocManager", quietly = TRUE)) {
-        cli::cli_alert_warning(
-          "BiocManager not installed. Installing Bioconductor packages using renv instead."
-        )
-        cli::cli_alert_info(
-          "Installing Bioconductor packages using renv: {.pkg {pkg}}"
-        )
-        tryCatch(
-          renv::install(paste0("bioc::", pkg), prompt = FALSE),
-          error = function(e) {
-            cli::cli_alert_danger(
-              "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {msg}",
-              msg = e$message
-            )
-          }
-        )
-      } else {
-        cli::cli_alert_info(
-          "Installing Bioconductor packages using BiocManager: {.pkg {pkg}}"
-        )
-        tryCatch(
-          BiocManager::install(pkg, update = TRUE, ask = FALSE),
-          error = function(e) {
-            cli::cli_alert_danger(
-              "Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}. Error: {msg}",
-              msg = e$message
-            )
-          }
-        )
-      }
-    } else {
-      cli::cli_alert_info(
-        "Installing Bioconductor packages using renv: {.pkg {pkg}}"
-      )
-      tryCatch(
-        renv::install(paste0("bioc::", pkg), prompt = FALSE),
-        error = function(e) {
-          cli::cli_alert_danger(
-            "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {msg}",
-            msg = e$message
-          )
-        }
-      )
-    }
-  } else {
-    cli::cli_alert_info("Installing packages: {.pkg {pkg}}")
-    tryCatch(
-      renv::install(pkg, prompt = FALSE),
-      error = function(e) {
-        cli::cli_alert_danger(
-          "Failed to install packages: {.pkg {pkg}}. Error: {msg}",
-          msg = e$message
-        )
-      }
-    )
-  }
-}
-
-# Internal function to install any remaining packages
-.renv_install_remaining <- function(pkg, biocmanager_install, is_bioc,
-                                     skip_if_dep_unavailable = TRUE,
-                                     lockfile_deps = list()) {
-  .ensure_cli()
-
-  pkg_remaining <- .get_missing_pkgs(pkg)
-
-  if (length(pkg_remaining) == 0L) {
-    cli::cli_alert_success("All packages are installed.")
-    return(invisible(FALSE))
-  }
-
-  cli::cli_alert_warning(
-    "Packages that are still missing: {.pkg {pkg_remaining}}"
-  )
-  cli::cli_alert_info("Attempting to install remaining packages.")
-
-  # Attempt to install remaining packages
-  .renv_install(pkg_remaining, biocmanager_install, is_bioc)
-
-  # Check again for any packages that failed to install
-  pkg_still_missing <- .get_missing_pkgs(pkg_remaining)
-
-  if (length(pkg_still_missing) == 0L) {
-    cli::cli_alert_success("All remaining packages installed successfully.")
-    return(invisible(TRUE))
-  }
-
-  cli::cli_alert_warning(
-    "Packages that failed to install: {.pkg {pkg_still_missing}}"
-  )
-  cli::cli_alert_info("Attempting to install missing packages individually.")
-
-  failed_pkgs <- character(0)
-
-  # Try installing missing packages individually
-  for (x in pkg_still_missing) {
-    pkg_name <- sub("^.*/", "", x)
-    if (!requireNamespace(pkg_name, quietly = TRUE)) {
-      if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
-        x_deps <- lockfile_deps[[pkg_name]]
-        if (!is.null(x_deps) && length(x_deps) > 0L) {
-          blocking <- .get_missing_pkgs(failed_pkgs[failed_pkgs %in% x_deps])
-          if (length(blocking) > 0L) {
-            cli::cli_alert_warning(
-              paste0(
-                "Skipping {.pkg {pkg_name}}: dep ",
-                "{.pkg {blocking}} failed and is not installed."
-              )
-            )
-            failed_pkgs <- c(failed_pkgs, pkg_name)
-            next
-          }
-        }
-      }
-      .renv_install(x, biocmanager_install, is_bioc)
-      if (!requireNamespace(pkg_name, quietly = TRUE)) {
-        failed_pkgs <- c(failed_pkgs, pkg_name)
-      }
-    }
-  }
-
-  # Final check
-  pkg_final_missing <- .get_missing_pkgs(pkg_still_missing)
-
-  if (length(pkg_final_missing) == 0L) {
-    cli::cli_alert_success(
-      "All packages installed successfully after individual attempts."
-    )
-  } else {
-    cli::cli_alert_danger(
-      "Some packages failed to install: {.pkg {pkg_final_missing}}"
-    )
-  }
-}
