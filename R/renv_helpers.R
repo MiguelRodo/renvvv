@@ -198,7 +198,6 @@
 # Two strategies are tried in order:
 #   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
 #   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
-<<<<<<< HEAD
 .renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
   if (is.null(lockfile_list_pkg)) {
     lockfile_list_pkg <- tryCatch({
@@ -462,8 +461,9 @@
                                      lockfile_deps = list()) {
   .ensure_cli()
 
-  installed_pkgs <- rownames(installed.packages())
-  pkg_remaining <- pkg[!pkg %in% installed_pkgs]
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
+  missing_names <- .get_missing_pkgs(pkg_names)
+  pkg_remaining <- pkg[pkg_names %in% missing_names]
 
   if (length(pkg_remaining) == 0L) {
     cli::cli_alert_success("All packages restored successfully.")

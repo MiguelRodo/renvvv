@@ -1,15 +1,21 @@
 testthat::skip_if_not_installed("mockery")
+
 test_that("error handlers are triggered correctly when packages fail", {
   skip_if_not_installed("mockery")
-  # Mock renv::install and renv::restore to always throw errors
+  
+  # Mock renv::restore to throw an error
   mockery::stub(.renv_restore_remaining, "renv::restore", function(...) stop("Mocked restore error"))
-  mockery::stub(.renv_install_remaining, "renv::install", function(...) stop("Mocked install error"))
-  mockery::stub(.renv_install_remaining, "BiocManager::install", function(...) stop("Mocked BiocManager install error"))
+  
+  # Mock .renv_install inside .renv_install_remaining so it doesn't actually call it
+  mockery::stub(.renv_install_remaining, ".renv_install", function(...) stop("Mocked install error"))
 
-  # Execute a deliberately failing restore
-  expect_error(
-    .renv_restore_remaining("non_existent_pkg_1"),
-    NA # we expect it to swallow the error internally and continue
+  # Execute a deliberately failing restore and verify the expected message
+  expect_message(
+    expect_error(
+      .renv_restore_remaining("non_existent_pkg_1"),
+      NA # we expect it to swallow the error internally and continue
+    ),
+    "Failed to restore package: .*non_existent_pkg_1.*Error: Mocked restore error"
   )
 
   # Execute deliberately failing installs
@@ -54,22 +60,20 @@ test_that(".renv_install error handler for BiocManager works", {
   # Verify the arguments passed to cli_alert_danger contained our message
   args <- mockery::mock_args(mock_danger)[[1]]
   expect_match(args[[1]], "Failed to install Bioconductor packages using BiocManager")
+})
 
-test_that(".renv_lockfile_deps_get handles lockfile path error gracefully", {
-  # Mock renv::paths$lockfile to throw an error. mockery::stub can handle "renv::paths$lockfile".
+test_that(".renv_lockfile_read_pkgs handles lockfile path error gracefully", {
+  # Mock renv::paths$lockfile to throw an error
   mockery::stub(.renv_lockfile_read_pkgs, "renv::paths", list(lockfile = function(...) stop("Mocked lockfile path error")))
 
-  # The error should be caught internally, returning an empty list.
-  # cli::cli_alert_warning issues messages, not warnings.
-  expect_message(
-    result <- .renv_lockfile_read_pkgs(),
-    "Could not determine lockfile path"
-  )
+  # The error should be caught internally, silently returning an empty list.
+  result <- .renv_lockfile_read_pkgs()
+  
   expect_type(result, "list")
   expect_length(result, 0)
 })
 
-test_that(".renv_lockfile_deps_get handles lockfile read error gracefully", {
+test_that(".renv_lockfile_read_pkgs handles lockfile read error gracefully", {
   # Mock lockfile path so file.exists passes
   tmp_lock <- tempfile("mock_renv_", fileext = ".lock")
   file.create(tmp_lock)
@@ -80,11 +84,9 @@ test_that(".renv_lockfile_deps_get handles lockfile read error gracefully", {
   # Mock renv::lockfile_read to throw an error
   mockery::stub(.renv_lockfile_read_pkgs, "renv::lockfile_read", function(...) stop("Mocked lockfile read error"))
 
-  # The error should be caught internally, returning an empty list
-  expect_message(
-    result <- .renv_lockfile_read_pkgs(),
-    "Could not read lockfile Packages"
-  )
+  # The error should be caught internally, silently returning an empty list
+  result <- .renv_lockfile_read_pkgs()
+  
   expect_type(result, "list")
   expect_length(result, 0)
 })

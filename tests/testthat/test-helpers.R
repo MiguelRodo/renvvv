@@ -178,6 +178,23 @@ test_that(".deps_from_requirements_pkg works correctly", {
   expect_equal(renvvv:::.deps_from_requirements_pkg(list(Requirements = 123)), character(0))
 })
 
+test_that(".deps_from_requirements_pkg works correctly", {
+  # Character vector
+  pkg_char <- list(Requirements = c("pkg1", "pkg2"))
+  expect_equal(renvvv:::.deps_from_requirements_pkg(pkg_char), c("pkg1", "pkg2"))
+
+  # Named list
+  pkg_list <- list(Requirements = list(pkg1 = "*", pkg2 = ">= 1.0.0"))
+  expect_equal(renvvv:::.deps_from_requirements_pkg(pkg_list), c("pkg1", "pkg2"))
+
+  # NULL/Missing
+  expect_equal(renvvv:::.deps_from_requirements_pkg(list()), character(0))
+  expect_equal(renvvv:::.deps_from_requirements_pkg(list(Requirements = NULL)), character(0))
+
+  # Unexpected type
+  expect_equal(renvvv:::.deps_from_requirements_pkg(list(Requirements = 123)), character(0))
+})
+
 test_that(".deps_from_description_fields strategy exists", {
   expect_true(is.function(.deps_from_description_fields))
 })
