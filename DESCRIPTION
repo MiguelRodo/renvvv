@@ -26,6 +26,6 @@ Suggests:
     rcmdcheck,
     rmarkdown,
     testthat (>= 3.0.0),
-    microbenchmkark
+    microbenchmark
 Config/testthat/edition: 3
 VignetteBuilder: knitr
