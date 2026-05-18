@@ -449,12 +449,14 @@ skip_if_dep_unavailable will be ignored."
   cli::cli_alert_info("Attempting to restore packages individually.")
 
   failed_pkgs <- character(0)
+  installed_now <- rownames(installed.packages())
 
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
       if (.is_blocked_by_failed_deps(
         pkg_name = x,
         failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
         skip_if_dep_unavailable = skip_if_dep_unavailable,
         lockfile_deps = lockfile_deps
       )) {
@@ -471,7 +473,8 @@ skip_if_dep_unavailable will be ignored."
       )
       if (!requireNamespace(x, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, x)
-
+      } else {
+        installed_now <- c(installed_now, x)
       }
     }
   }
@@ -540,13 +543,15 @@ skip_if_dep_unavailable will be ignored."
 # Internal function to check if a package is blocked by failed dependencies
 .is_blocked_by_failed_deps <- function(pkg_name,
                                         failed_pkgs,
+                                        installed_now,
                                         skip_if_dep_unavailable,
                                         lockfile_deps) {
   if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
     x_deps <- lockfile_deps[[pkg_name]]
     if (!is.null(x_deps) && length(x_deps) > 0L) {
-      failed_deps <- failed_pkgs[failed_pkgs %in% x_deps]
-      blocking <- .get_missing_pkgs(failed_deps)
+      blocking <- failed_pkgs[
+        failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
+      ]
       if (length(blocking) > 0L) {
         cli::cli_alert_warning(
           paste0(
@@ -567,9 +572,10 @@ skip_if_dep_unavailable will be ignored."
                                      lockfile_deps = list()) {
   .ensure_cli()
 
-  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
-  missing_names <- .get_missing_pkgs(pkg_names)
-  pkg_remaining <- pkg[pkg_names %in% missing_names]
+  installed_pkgs <- rownames(installed.packages())
+  pkg_remaining <- pkg[
+    !vapply(pkg, .extract_pkg_name, character(1)) %in% installed_pkgs
+  ]
 
   if (length(pkg_remaining) == 0L) {
     cli::cli_alert_success("All packages are installed.")
@@ -598,6 +604,7 @@ skip_if_dep_unavailable will be ignored."
   cli::cli_alert_info("Attempting to install missing packages individually.")
 
   failed_pkgs <- character(0)
+  installed_now <- rownames(installed.packages())
 
   # Try installing missing packages individually
   for (x in pkg_still_missing) {
@@ -606,6 +613,7 @@ skip_if_dep_unavailable will be ignored."
       if (.is_blocked_by_failed_deps(
         pkg_name = pkg_name,
         failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
         skip_if_dep_unavailable = skip_if_dep_unavailable,
         lockfile_deps = lockfile_deps
       )) {
@@ -615,7 +623,8 @@ skip_if_dep_unavailable will be ignored."
       .renv_install(x, biocmanager_install, is_bioc)
       if (!requireNamespace(pkg_name, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, pkg_name)
-
+      } else {
+        installed_now <- c(installed_now, pkg_name)
       }
     }
   }
