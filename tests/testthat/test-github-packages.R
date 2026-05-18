@@ -26,7 +26,7 @@ test_that("renvvv can parse GitHub packages from lockfile", {
   expect_named(pkg_list, c("regular", "bioc", "gh"))
 
   # Should have praise in the GitHub packages list
-  expect_true("r-lib/praise" %in% pkg_list$gh)
+  expect_true("rladies/praise" %in% pkg_list$gh)
   expect_length(pkg_list$gh, 1)
 
   # Should have no CRAN or Bioc packages in this fixture
@@ -56,7 +56,7 @@ test_that("lockfile fixture has correct GitHub remote fields", {
   expect_equal(praise_info$Source, "GitHub")
   expect_equal(praise_info$RemoteType, "github")
   expect_equal(praise_info$RemoteHost, "api.github.com")
-  expect_equal(praise_info$RemoteUsername, "r-lib")
+  expect_equal(praise_info$RemoteUsername, "rladies")
   expect_equal(praise_info$RemoteRepo, "praise")
 })
 
@@ -65,7 +65,7 @@ test_that("GitHub API is accessible for package operations", {
   skip_if_not(.github_api_available(), "GitHub API not accessible")
 
   # Verify the GitHub repos API endpoint is reachable
-  con <- url("https://api.github.com/repos/r-lib/praise", open = "r")
+  con <- url("https://api.github.com/repos/gaborcsardi/praise", open = "r")
   on.exit(close(con), add = TRUE)
   response <- readLines(con, warn = FALSE)
   expect_true(length(response) > 0)
@@ -78,7 +78,7 @@ test_that("GitHub codeload endpoint is accessible", {
   # Verify the codeload endpoint used by renv for tarball downloads
   result <- tryCatch({
     con <- url(
-      "https://api.github.com/repos/r-lib/praise/tarball/HEAD",
+      "https://api.github.com/repos/gaborcsardi/praise/tarball/HEAD",
       open = "r"
     )
     on.exit(close(con), add = TRUE)
@@ -473,7 +473,7 @@ test_that("renvvv_restore_and_update with non_github=FALSE skips CRAN packages",
 
 test_that("GitHub package format is correctly parsed", {
   # Test package name extraction from GitHub remotes
-  github_pkg <- "r-lib/praise"
+  github_pkg <- "rladies/praise"
   pkg_name <- sub("^.*/", "", github_pkg)
 
   expect_equal(pkg_name, "praise")
@@ -540,7 +540,7 @@ test_that("mixed lockfile correctly classifies CRAN and GitHub packages", {
   expect_true("tinytest" %in% pkg_list$regular)
 
   # praise should be classified as GitHub
-  expect_true("r-lib/praise" %in% pkg_list$gh)
+  expect_true("rladies/praise" %in% pkg_list$gh)
 
   # No Bioconductor packages
   expect_length(pkg_list$bioc, 0)

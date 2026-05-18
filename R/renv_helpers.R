@@ -162,10 +162,19 @@
   fields <- c("Depends", "Imports", "LinkingTo")
 
   for (field in fields) {
-    if (!is.null(pkg_info[[field]])) {
-      field_deps <- unlist(strsplit(pkg_info[[field]], ",\\s*"))
-      parsed <- unlist(lapply(field_deps, .parse_dep_field))
-      deps <- c(deps, parsed)
+    val <- pkg_info[[field]]
+    if (!is.null(val) && length(val) > 0) {
+      # Handle cases where JSON parsing results in a list
+      if (is.list(val)) {
+        val <- if (!is.null(names(val))) names(val) else unlist(val)
+      }
+      
+      # Ensure val is valid and has length after unlisting
+      if (length(val) > 0) {
+        field_deps <- unlist(strsplit(as.character(val), ",\\s*"))
+        parsed <- unlist(lapply(field_deps, .parse_dep_field))
+        deps <- c(deps, parsed)
+      }
     }
   }
 
@@ -197,35 +206,6 @@
 # Two strategies are tried in order:
 #   1. Requirements field (renv 0.15.0 - 1.0.x lockfile format)
 #   2. Imports/Depends/LinkingTo fields (renv 1.1.0+ lockfile format)
-.renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
-  if (is.null(lockfile_list_pkg)) {
-    lockfile_list_pkg <- tryCatch({
-      .renv_lockfile_read_pkgs()
-    }, error = function(e) {
-      cli::cli_alert_warning(
-        paste0("Could not read lockfile Packages ",
-               "(skip_if_dep_unavailable ignored): {e$message}")
-      )
-      NULL
-    })
-  }
-
-  if (is.null(lockfile_list_pkg) || length(lockfile_list_pkg) == 0) {
-    return(list())
-  }
-
-  deps <- .deps_from_requirements(lockfile_list_pkg)
-  if (!is.null(deps)) return(deps)
-
-  deps <- .deps_from_description_fields(lockfile_list_pkg)
-  if (!is.null(deps)) return(deps)
-
-  cli::cli_alert_warning(
-    paste0("Could not extract package dependencies from lockfile; ",
-           "skip_if_dep_unavailable will be ignored.")
-  )
-  list()
-}
 .renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
   if (is.null(lockfile_list_pkg)) {
     lockfile_list_pkg <- tryCatch({
