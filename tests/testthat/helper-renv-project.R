@@ -101,7 +101,7 @@
   tryCatch({
     # Test if we can access the GitHub repos API which renv needs
     # for resolving and installing GitHub packages
-    con <- url("https://api.github.com/repos/gaborcsardi/praise", open = "r")
+    con <- url("https://api.github.com/repos/rladies/praise", open = "r")
     on.exit(close(con), add = TRUE)
     TRUE
   }, error = function(e) FALSE,

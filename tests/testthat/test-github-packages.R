@@ -65,7 +65,7 @@ test_that("GitHub API is accessible for package operations", {
   skip_if_not(.github_api_available(), "GitHub API not accessible")
 
   # Verify the GitHub repos API endpoint is reachable
-  con <- url("https://api.github.com/repos/gaborcsardi/praise", open = "r")
+  con <- url("https://api.github.com/repos/rladies/praise", open = "r")
   on.exit(close(con), add = TRUE)
   response <- readLines(con, warn = FALSE)
   expect_true(length(response) > 0)
@@ -78,7 +78,7 @@ test_that("GitHub codeload endpoint is accessible", {
   # Verify the codeload endpoint used by renv for tarball downloads
   result <- tryCatch({
     con <- url(
-      "https://api.github.com/repos/gaborcsardi/praise/tarball/HEAD",
+      "https://api.github.com/repos/rladies/praise/tarball/HEAD",
       open = "r"
     )
     on.exit(close(con), add = TRUE)

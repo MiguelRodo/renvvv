@@ -124,7 +124,7 @@ devtools::check()
 ## Known Issues and Workarounds
 
 - **INLA repo errors during tests**: The warning `error downloading 'https://inla.r-inla-download.org/...'` appears when `renv_repos.R` configures INLA as a repository. This is expected in environments without INLA access and does not cause test failures.
-- **GitHub API tests skipped**: Integration tests that install packages from GitHub (e.g., `gaborcsardi/praise`) are skipped when the GitHub API is not accessible. This is expected in sandboxed CI environments.
+- **GitHub API tests skipped**: Integration tests that install packages from GitHub (e.g., `rladies/praise`) are skipped when the GitHub API is not accessible. This is expected in sandboxed CI environments.
 - **renv.lock not found**: The test `.renv_lockfile_pkg_get returns list with expected structure` is skipped unless a `renv.lock` file exists in the test working directory.
 - **Read-only file test warning**: `test-edge-cases.R` test for read-only `_dependencies.R` produces a warning about "Permission denied" — this is expected behavior being tested, not a real failure.
 

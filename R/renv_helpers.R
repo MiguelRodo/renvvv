@@ -366,7 +366,284 @@
       skip_if_dep_unavailable = skip_if_dep_unavailable,
       lockfile_deps = lockfile_deps
     )
+  } else {
+    action <- if (restore) "restoring" else "installing"
+    cli::cli_alert_info("Skipping {action} {source} packages.")
+  }
+}
+
+# Internal function to restore or update packages
+.renv_restore_update_actual <- function(pkg, restore, biocmanager_install,
+                                         is_bioc,
+                                         skip_if_dep_unavailable = TRUE,
+                                         lockfile_deps = list()) {
+  if (length(pkg) == 0L) {
+    return(invisible(FALSE))
   }
 
+  .ensure_cli()
+
+  pkg_type <- if (is_bioc) {
+    "Bioconductor"
+  } else if (all(grepl("/", pkg))) {
+    "GitHub"
+  } else {
+    "CRAN"
+  }
+
+  # Extract package names from possible remotes
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
+
+  if (restore) {
+    cli::cli_alert_info(
+      "Attempting to restore {pkg_type} packages: {.pkg {pkg_names}}"
+    )
+    # Attempt to restore packages
+    tryCatch(
+      renv::restore(packages = pkg_names, transactional = FALSE),
+      error = function(e) {
+        cli::cli_alert_danger(
+          "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}. Error: {e$message}"
+        )
+      }
+    )
+    cli::cli_alert_info("Checking for packages that failed to restore.")
+    .renv_restore_remaining(
+      pkg_names,
+      skip_if_dep_unavailable = skip_if_dep_unavailable,
+      lockfile_deps = lockfile_deps
+    )
+  } else {
+    cli::cli_alert_info(
+      "Installing latest {pkg_type} packages: {.pkg {pkg_names}}"
+    )
+    # Install the latest versions
+    .renv_install(pkg, biocmanager_install, is_bioc)
+  }
+
+  cli::cli_alert_info("Checking for packages that are still not installed.")
+  # Install any remaining packages that were not installed
+  .renv_install_remaining(
+    pkg,
+    biocmanager_install,
+    is_bioc,
+    skip_if_dep_unavailable = skip_if_dep_unavailable,
+    lockfile_deps = lockfile_deps
+  )
   invisible(TRUE)
+}
+
+# Internal function to restore remaining packages individually
+.renv_restore_remaining <- function(pkg,
+                                     skip_if_dep_unavailable = TRUE,
+                                     lockfile_deps = list()) {
+  .ensure_cli()
+
+  pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
+  missing_names <- .get_missing_pkgs(pkg_names)
+  pkg_remaining <- pkg[pkg_names %in% missing_names]
+
+  if (length(pkg_remaining) == 0L) {
+    cli::cli_alert_success("All packages restored successfully.")
+    return(invisible(FALSE))
+  }
+
+  cli::cli_alert_warning(
+    "Packages that failed to restore: {.pkg {pkg_remaining}}"
+  )
+  cli::cli_alert_info("Attempting to restore packages individually.")
+
+  failed_pkgs <- character(0)
+  installed_now <- rownames(installed.packages())
+
+  for (x in pkg_remaining) {
+    if (!requireNamespace(x, quietly = TRUE)) {
+      if (.is_blocked_by_failed_deps(
+        pkg_name = x,
+        failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
+        skip_if_dep_unavailable = skip_if_dep_unavailable,
+        lockfile_deps = lockfile_deps
+      )) {
+        failed_pkgs <- c(failed_pkgs, x)
+        next
+      }
+      tryCatch(
+        renv::restore(packages = x, transactional = FALSE),
+        error = function(e) {
+          cli::cli_alert_danger(
+            "Failed to restore package: {.pkg {x}}. Error: {e$message}"
+          )
+        }
+      )
+      if (!requireNamespace(x, quietly = TRUE)) {
+        failed_pkgs <- c(failed_pkgs, x)
+      } else {
+        installed_now <- c(installed_now, x)
+      }
+    }
+  }
+}
+
+# Internal function to install packages
+.renv_install <- function(pkg, biocmanager_install, is_bioc) {
+  .ensure_cli()
+
+  if (is_bioc) {
+    if (biocmanager_install) {
+      if (!requireNamespace("BiocManager", quietly = TRUE)) {
+        cli::cli_alert_warning(
+          "BiocManager not installed. Installing Bioconductor packages using renv instead."
+        )
+        cli::cli_alert_info(
+          "Installing Bioconductor packages using renv: {.pkg {pkg}}"
+        )
+        tryCatch(
+          renv::install(paste0("bioc::", pkg), prompt = FALSE),
+          error = function(e) {
+            cli::cli_alert_danger(
+              "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
+            )
+          }
+        )
+      } else {
+        cli::cli_alert_info(
+          "Installing Bioconductor packages using BiocManager: {.pkg {pkg}}"
+        )
+        tryCatch(
+          BiocManager::install(pkg, update = TRUE, ask = FALSE),
+          error = function(e) {
+            cli::cli_alert_danger(
+              "Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}. Error: {e$message}"
+            )
+          }
+        )
+      }
+    } else {
+      cli::cli_alert_info(
+        "Installing Bioconductor packages using renv: {.pkg {pkg}}"
+      )
+      tryCatch(
+        renv::install(paste0("bioc::", pkg), prompt = FALSE),
+        error = function(e) {
+          cli::cli_alert_danger(
+            "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
+          )
+        }
+      )
+    }
+  } else {
+    cli::cli_alert_info("Installing packages: {.pkg {pkg}}")
+    tryCatch(
+      renv::install(pkg, prompt = FALSE),
+      error = function(e) {
+        cli::cli_alert_danger(
+          "Failed to install packages: {.pkg {pkg}}. Error: {e$message}"
+        )
+      }
+    )
+  }
+}
+
+# Internal function to check if a package is blocked by failed dependencies
+.is_blocked_by_failed_deps <- function(pkg_name,
+                                        failed_pkgs,
+                                        installed_now,
+                                        skip_if_dep_unavailable,
+                                        lockfile_deps) {
+  if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
+    x_deps <- lockfile_deps[[pkg_name]]
+    if (!is.null(x_deps) && length(x_deps) > 0L) {
+      blocking <- failed_pkgs[
+        failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
+      ]
+      if (length(blocking) > 0L) {
+        cli::cli_alert_warning(
+          paste0(
+            "Skipping {.pkg {pkg_name}}: dep ",
+            "{.pkg {blocking}} failed and is not installed."
+          )
+        )
+        return(TRUE)
+      }
+    }
+  }
+  FALSE
+}
+
+# Internal function to install any remaining packages
+.renv_install_remaining <- function(pkg, biocmanager_install, is_bioc,
+                                     skip_if_dep_unavailable = TRUE,
+                                     lockfile_deps = list()) {
+  .ensure_cli()
+
+  installed_pkgs <- rownames(installed.packages())
+  pkg_remaining <- pkg[
+    !vapply(pkg, .extract_pkg_name, character(1)) %in% installed_pkgs
+  ]
+
+  if (length(pkg_remaining) == 0L) {
+    cli::cli_alert_success("All packages are installed.")
+    return(invisible(FALSE))
+  }
+
+  cli::cli_alert_warning(
+    "Packages that are still missing: {.pkg {pkg_remaining}}"
+  )
+  cli::cli_alert_info("Attempting to install remaining packages.")
+
+  # Attempt to install remaining packages
+  .renv_install(pkg_remaining, biocmanager_install, is_bioc)
+
+  # Check again for any packages that failed to install
+  pkg_still_missing <- .get_missing_pkgs(pkg_remaining)
+
+  if (length(pkg_still_missing) == 0L) {
+    cli::cli_alert_success("All remaining packages installed successfully.")
+    return(invisible(TRUE))
+  }
+
+  cli::cli_alert_warning(
+    "Packages that failed to install: {.pkg {pkg_still_missing}}"
+  )
+  cli::cli_alert_info("Attempting to install missing packages individually.")
+
+  failed_pkgs <- character(0)
+  installed_now <- rownames(installed.packages())
+
+  # Try installing missing packages individually
+  for (x in pkg_still_missing) {
+    pkg_name <- .extract_pkg_name(x)
+    if (!requireNamespace(pkg_name, quietly = TRUE)) {
+      if (.is_blocked_by_failed_deps(
+        pkg_name = pkg_name,
+        failed_pkgs = failed_pkgs,
+        installed_now = installed_now,
+        skip_if_dep_unavailable = skip_if_dep_unavailable,
+        lockfile_deps = lockfile_deps
+      )) {
+        failed_pkgs <- c(failed_pkgs, pkg_name)
+        next
+      }
+      .renv_install(x, biocmanager_install, is_bioc)
+      if (!requireNamespace(pkg_name, quietly = TRUE)) {
+        failed_pkgs <- c(failed_pkgs, pkg_name)
+      } else {
+        installed_now <- c(installed_now, pkg_name)
+      }
+    }
+  }
+
+  # Final check
+  pkg_final_missing <- .get_missing_pkgs(pkg_still_missing)
+
+  if (length(pkg_final_missing) == 0L) {
+    cli::cli_alert_success(
+      "All packages installed successfully after individual attempts."
+    )
+  } else {
+    cli::cli_alert_danger(
+      "Some packages failed to install: {.pkg {pkg_final_missing}}"
+    )
+  }
 }

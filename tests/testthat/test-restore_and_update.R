@@ -64,7 +64,7 @@ test_that("renvvv_restore_and_update works with a GitHub package", {
   on.exit(.teardown_renv_project(ctx), add = TRUE)
 
   # Install praise from GitHub and snapshot
-  renv::install("gaborcsardi/praise", prompt = FALSE)
+  renv::install("rladies/praise", prompt = FALSE)
   renv::snapshot(packages = "praise", confirm = FALSE)
 
   # Verify it's in the lockfile as a GitHub package
