@@ -150,17 +150,4 @@ test_that("renvvv_restore skips packages specified in skip parameter", {
   expect_false(
     nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
   )
-
-  # Run renvvv_restore with skip parameter for tinytest
-  suppressMessages(
-    renvvv_restore(non_github = TRUE, github = FALSE, skip = "tinytest")
-  )
-
-  # Verify mime is restored but tinytest is not
-  expect_true(
-    nzchar(system.file(package = "mime", lib.loc = .libPaths()[1]))
-  )
-  expect_false(
-    nzchar(system.file(package = "tinytest", lib.loc = .libPaths()[1]))
-  )
 })

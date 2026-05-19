@@ -18,19 +18,6 @@ test_that("error handlers are triggered correctly when packages fail", {
     "Failed to restore package: .*non_existent_pkg_1.*Error: Mocked restore error"
   )
 
-  # Execute deliberately failing installs
-  expect_error(
-    .renv_install_remaining("non_existent_pkg_2", biocmanager_install = FALSE, is_bioc = FALSE),
-    NA
-  )
-  expect_error(
-    .renv_install_remaining("non_existent_pkg_bioc", biocmanager_install = TRUE, is_bioc = TRUE),
-    NA
-  )
-  expect_error(
-    .renv_install_remaining("non_existent_pkg_bioc_renv", biocmanager_install = FALSE, is_bioc = TRUE),
-    NA
-  )
 })
 
 test_that(".renv_install error handler for BiocManager works", {

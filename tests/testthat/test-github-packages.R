@@ -29,8 +29,9 @@ test_that("renvvv can parse GitHub packages from lockfile", {
   expect_true("rladies/praise" %in% pkg_list$gh)
   expect_length(pkg_list$gh, 1)
 
-  # Should have no CRAN or Bioc packages in this fixture
-  expect_length(pkg_list$regular, 0)
+  # Should have no CRAN or Bioc packages in this fixture,
+  # except for renv
+  expect_length(pkg_list$regular, 1L)
   expect_length(pkg_list$bioc, 0)
 })
 

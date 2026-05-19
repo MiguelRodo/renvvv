@@ -27,7 +27,12 @@
         if (dir.exists(pkg_dir)) {
           counter <- counter + 1L
           dest <- file.path(hidden_dir, paste0(pkg, "_", counter))
-          if (isTRUE(try(file.rename(pkg_dir, dest), silent = TRUE))) {
+
+          # fs::file_move seamlessly handles moving across
+          # different drive volumes
+          moved <- try({ fs::file_move(pkg_dir, dest); TRUE }, silent = TRUE)
+
+          if (isTRUE(moved)) {
             hidden_pkgs[[counter]] <- list(
               hidden = dest,
               original = pkg_dir
