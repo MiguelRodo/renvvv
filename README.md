@@ -16,6 +16,17 @@ you don't lose progress on the packages that *can* be restored.
 
 ## Installation
 
+To install the latest release, run:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("MiguelRodo/renvvv@latest")
+```
+
+Instead of `latest`, specific versions (e.g. `v0.2.0`) or minor (e.g. `v0.2`) or major (e.g. `v0`) versions may be specified.
+
+To install the latest development version, run:
+
 ``` r
 # install.packages("devtools")
 devtools::install_github("MiguelRodo/renvvv")
