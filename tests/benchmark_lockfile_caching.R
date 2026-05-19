@@ -4,7 +4,7 @@
 
 # To run: Rscript tests/benchmark_lockfile_caching.R
 
-skip()
+testthat::skip()
 
 # If run in an environment with missing dependencies, it gracefully skips.
 if (!requireNamespace("microbenchmark", quietly = TRUE)) {

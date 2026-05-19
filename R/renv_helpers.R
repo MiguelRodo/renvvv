@@ -454,7 +454,7 @@
   cli::cli_alert_info("Attempting to restore packages individually.")
 
   failed_pkgs <- character(0)
-  installed_now <- rownames(installed.packages())
+  installed_now <- rownames(utils::installed.packages())
 
   for (x in pkg_remaining) {
     if (!requireNamespace(x, quietly = TRUE)) {
@@ -577,7 +577,7 @@
                                      lockfile_deps = list()) {
   .ensure_cli()
 
-  installed_pkgs <- rownames(installed.packages())
+  installed_pkgs <- rownames(utils::installed.packages())
   pkg_remaining <- pkg[
     !vapply(pkg, .extract_pkg_name, character(1)) %in% installed_pkgs
   ]
@@ -609,7 +609,7 @@
   cli::cli_alert_info("Attempting to install missing packages individually.")
 
   failed_pkgs <- character(0)
-  installed_now <- rownames(installed.packages())
+  installed_now <- rownames(utils::installed.packages())
 
   # Try installing missing packages individually
   for (x in pkg_still_missing) {

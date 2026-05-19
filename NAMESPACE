@@ -3,4 +3,3 @@
 export(renvvv_restore)
 export(renvvv_restore_and_update)
 export(renvvv_update)
-importFrom(utils,installed.packages)
