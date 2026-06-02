@@ -402,9 +402,11 @@
     tryCatch(
       renv::restore(packages = pkg_names, transactional = FALSE),
       error = function(e) {
+        # FIXED: Removed {e$message} from the cli interpolation to prevent crashing on unescaped braces
         cli::cli_alert_danger(
-          "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}. Error: {e$message}"
+          "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}."
         )
+        message("Error: ", e$message)
       }
     )
     cli::cli_alert_info("Checking for packages that failed to restore.")
@@ -471,9 +473,9 @@
       tryCatch(
         renv::restore(packages = x, transactional = FALSE),
         error = function(e) {
-          cli::cli_alert_danger(
-            "Failed to restore package: {.pkg {x}}. Error: {e$message}"
-          )
+          cli::cli_alert_danger("Failed to restore package: {.pkg {x}}.")
+          # Print the raw message safely without cli interpolation
+          message("Error: ", e$message)
         }
       )
       if (!requireNamespace(x, quietly = TRUE)) {
@@ -501,9 +503,9 @@
         tryCatch(
           renv::install(paste0("bioc::", pkg), prompt = FALSE),
           error = function(e) {
-            cli::cli_alert_danger(
-              "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
-            )
+            cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}.")
+            # Print the raw message safely without cli interpolation
+            message("Error: ", e$message)
           }
         )
       } else {
@@ -513,9 +515,9 @@
         tryCatch(
           BiocManager::install(pkg, update = TRUE, ask = FALSE),
           error = function(e) {
-            cli::cli_alert_danger(
-              "Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}. Error: {e$message}"
-            )
+            cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}.")
+            # Print the raw message safely without cli interpolation
+            message("Error: ", e$message)
           }
         )
       }
@@ -526,9 +528,9 @@
       tryCatch(
         renv::install(paste0("bioc::", pkg), prompt = FALSE),
         error = function(e) {
-          cli::cli_alert_danger(
-            "Failed to install Bioconductor packages via renv: {.pkg {pkg}}. Error: {e$message}"
-          )
+          cli::cli_alert_danger("Failed to install Bioconductor packages via renv: {.pkg {pkg}}.")
+          # Print the raw message safely without cli interpolation
+          message("Error: ", e$message)
         }
       )
     }
@@ -537,9 +539,9 @@
     tryCatch(
       renv::install(pkg, prompt = FALSE),
       error = function(e) {
-        cli::cli_alert_danger(
-          "Failed to install packages: {.pkg {pkg}}. Error: {e$message}"
-        )
+        cli::cli_alert_danger("Failed to install packages: {.pkg {pkg}}.")
+        # Print the raw message safely without cli interpolation
+        message("Error: ", e$message)
       }
     )
   }
