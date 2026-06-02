@@ -1,5 +1,8 @@
 {
   "image": "ghcr.io/miguelrodo/devcontainers-main:v1.1.4",
+  "features": {
+    "ghcr.io/rocker-org/devcontainer-features/r-dependent-packages:0": {}
+  },
   "customizations": {
     "vscode": {
       "extensions": [
