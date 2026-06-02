@@ -8,7 +8,11 @@ renvvv_restore(
   github = TRUE,
   non_github = TRUE,
   biocmanager_install = FALSE,
-  skip = character(0)
+  skip = character(0),
+  prompt = FALSE,
+  transactional = FALSE,
+  args_restore = list(),
+  args_install = list()
 )
 }
 \arguments{
@@ -25,6 +29,17 @@ Default is \code{FALSE}.}
 
 \item{skip}{Character vector. Package names to skip during restore.
 Default is \code{character(0)} (no packages skipped).}
+
+\item{prompt}{Logical. Whether to prompt for user confirmation during renv
+operations. Default is \code{FALSE}.}
+
+\item{transactional}{Logical. Whether to use transactional package
+restoration. Default is \code{FALSE}.}
+
+\item{args_restore}{List. Arbitrary arguments to pass down to \code{renv::restore()}.}
+
+\item{args_install}{List. Arbitrary arguments to pass down to \code{renv::install()}
+when fallback installations occur.}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -47,8 +62,8 @@ renvvv_restore()
 # Only restore non-GitHub packages
 renvvv_restore(github = FALSE)
 
-# Skip specific packages
-renvvv_restore(skip = c("dplyr", "ggplot2"))
+# Pass clean = FALSE to renv::restore
+renvvv_restore(args_restore = list(clean = FALSE))
 }
 
 }

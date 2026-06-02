@@ -9,7 +9,11 @@ renvvv_update(
   non_github = TRUE,
   biocmanager_install = FALSE,
   skip = character(0),
-  skip_if_dep_unavailable = TRUE
+  skip_if_dep_unavailable = TRUE,
+  prompt = FALSE,
+  transactional = FALSE,
+  args_update = list(),
+  args_install = list()
 )
 }
 \arguments{
@@ -30,6 +34,16 @@ Default is \code{character(0)} (no packages skipped).}
 \item{skip_if_dep_unavailable}{Logical. If \code{TRUE}, skip installing a
 package when one of its lockfile-listed dependencies previously failed
 to install and is not currently available. Default is \code{TRUE}.}
+
+\item{prompt}{Logical. Whether to prompt for user confirmation during renv
+operations. Default is \code{FALSE}.}
+
+\item{transactional}{Logical. Whether to use transactional package
+restoration. Default is \code{FALSE}.}
+
+\item{args_update}{List. Arbitrary arguments to pass down for update operations.}
+
+\item{args_install}{List. Arbitrary arguments to pass down to \code{renv::install()}.}
 }
 \value{
 Invisibly returns \code{TRUE} upon successful completion.
@@ -43,20 +57,4 @@ If an renv project is detected (via \code{renv.lock} file) but not currently
 active, the function will activate it. In interactive sessions, the user
 will be prompted for confirmation before activation. In non-interactive
 sessions, activation occurs automatically.
-}
-\examples{
-\dontrun{
-# Update all packages
-renvvv_update()
-
-# Only update GitHub packages
-renvvv_update(non_github = FALSE)
-
-# Skip specific packages
-renvvv_update(skip = c("dplyr", "ggplot2"))
-
-# Attempt every package even if a dependency failed
-renvvv_update(skip_if_dep_unavailable = FALSE)
-}
-
 }
