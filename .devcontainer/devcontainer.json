@@ -4,8 +4,7 @@
     "vscode": {
       "extensions": [
         "quarto.quarto",
-        "mathematic.vscode-pdf",
-        "reditorsupport.r"
+        "Posit.air-vscode"
       ]
     }
   }
