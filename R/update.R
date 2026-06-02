@@ -23,30 +23,29 @@
 #' @param skip_if_dep_unavailable Logical. If `TRUE`, skip installing a
 #'   package when one of its lockfile-listed dependencies previously failed
 #'   to install and is not currently available. Default is `TRUE`.
+#' @param prompt Logical. Whether to prompt for user confirmation during renv
+#'   operations. Default is `FALSE`.
+#' @param transactional Logical. Whether to use transactional package
+#'   restoration. Default is `FALSE`.
+#' @param args_update List. Arbitrary arguments to pass down for update operations.
+#' @param args_install List. Arbitrary arguments to pass down to `renv::install()`.
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
-#' @examples
-#' \dontrun{
-#' # Update all packages
-#' renvvv_update()
-#'
-#' # Only update GitHub packages
-#' renvvv_update(non_github = FALSE)
-#'
-#' # Skip specific packages
-#' renvvv_update(skip = c("dplyr", "ggplot2"))
-#'
-#' # Attempt every package even if a dependency failed
-#' renvvv_update(skip_if_dep_unavailable = FALSE)
-#' }
-#'
 #' @export
 renvvv_update <- function(github = TRUE,
-                              non_github = TRUE,
-                              biocmanager_install = FALSE,
-                              skip = character(0),
-                              skip_if_dep_unavailable = TRUE) {
+                          non_github = TRUE,
+                          biocmanager_install = FALSE,
+                          skip = character(0),
+                          skip_if_dep_unavailable = TRUE,
+                          prompt = FALSE,
+                          transactional = FALSE,
+                          args_update = list(),
+                          args_install = list()) {
+  # Sanitize to prevent overriding core arguments
+  args_update[c("packages", "prompt", "transactional")] <- NULL
+  args_install[c("packages", "prompt")] <- NULL
+
   .check_renv()
   .ensure_cli()
   .check_renv_activation()
@@ -63,7 +62,12 @@ renvvv_update <- function(github = TRUE,
     biocmanager_install = biocmanager_install,
     skip = skip,
     skip_if_dep_unavailable = skip_if_dep_unavailable,
-    lockfile_list_pkg = lockfile_list_pkg
+    lockfile_list_pkg = lockfile_list_pkg,
+    prompt = prompt,
+    transactional = transactional,
+    args_restore = list(),
+    args_install = args_install,
+    args_update = args_update
   )
   cli::cli_h1("renv environment update completed")
   invisible(TRUE)
