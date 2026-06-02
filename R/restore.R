@@ -20,6 +20,13 @@
 #'   Default is `FALSE`.
 #' @param skip Character vector. Package names to skip during restore.
 #'   Default is `character(0)` (no packages skipped).
+#' @param prompt Logical. Whether to prompt for user confirmation during renv
+#'   operations. Default is `FALSE`.
+#' @param transactional Logical. Whether to use transactional package
+#'   restoration. Default is `FALSE`.
+#' @param args_restore List. Arbitrary arguments to pass down to `renv::restore()`.
+#' @param args_install List. Arbitrary arguments to pass down to `renv::install()`
+#'   when fallback installations occur.
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
@@ -31,15 +38,23 @@
 #' # Only restore non-GitHub packages
 #' renvvv_restore(github = FALSE)
 #'
-#' # Skip specific packages
-#' renvvv_restore(skip = c("dplyr", "ggplot2"))
+#' # Pass clean = FALSE to renv::restore
+#' renvvv_restore(args_restore = list(clean = FALSE))
 #' }
 #'
 #' @export
 renvvv_restore <- function(github = TRUE,
-                               non_github = TRUE,
-                               biocmanager_install = FALSE,
-                               skip = character(0)) {
+                           non_github = TRUE,
+                           biocmanager_install = FALSE,
+                           skip = character(0),
+                           prompt = FALSE,
+                           transactional = FALSE,
+                           args_restore = list(),
+                           args_install = list()) {
+  # Sanitize to prevent overriding core arguments
+  args_restore[c("packages", "prompt", "transactional")] <- NULL
+  args_install[c("packages", "prompt")] <- NULL
+
   .check_renv()
   .ensure_cli()
   .check_renv_activation()
@@ -56,7 +71,12 @@ renvvv_restore <- function(github = TRUE,
     biocmanager_install = biocmanager_install,
     skip = skip,
     skip_if_dep_unavailable = TRUE,
-    lockfile_list_pkg = lockfile_list_pkg
+    lockfile_list_pkg = lockfile_list_pkg,
+    prompt = prompt,
+    transactional = transactional,
+    args_restore = args_restore,
+    args_install = args_install,
+    args_update = list()
   )
   cli::cli_h1("renv environment restoration completed")
   invisible(TRUE)
