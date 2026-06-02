@@ -1,266 +1,16 @@
-# Helper function to ensure the cli package is available
-.ensure_cli <- function() {
-  if (!requireNamespace("cli", quietly = TRUE)) {
-    try(renv::install("cli", prompt = FALSE))
-  }
-}
-
-# Helper function to check if renv is available
-.check_renv <- function() {
-  if (!requireNamespace("renv", quietly = TRUE)) {
-    stop("The 'renv' package is required but not installed.")
-  }
-}
-
-# Helper function to check and activate renv project if needed
-.check_renv_activation <- function() {
-  lockfile_path <- .renv_paths_lockfile()
-  if (!file.exists(lockfile_path)) {
-    return(invisible(NULL))
-  }
-
-  current_project <- renv::project(default = NULL)
-  project_dir <- getwd()
-
-  if (!is.null(current_project)) {
-    current_project <- normalizePath(current_project, mustWork = FALSE)
-  }
-  project_dir <- normalizePath(project_dir, mustWork = FALSE)
-
-  if (!is.null(current_project) && current_project == project_dir) {
-    return(invisible(NULL))
-  }
-
-  .ensure_cli()
-
-  if (interactive()) {
-    cli::cli_alert_warning(
-      "The renv project at {.path {project_dir}} is not currently active."
-    )
-    response <- readline(
-      prompt = "Would you like to activate it now? (y/n): "
-    )
-    if (tolower(trimws(response)) %in% c("y", "yes")) {
-      cli::cli_alert_info("Activating renv project...")
-      renv::activate(project = project_dir)
-      cli::cli_alert_success("renv project activated.")
-    } else {
-      cli::cli_alert_info("Proceeding without activation.")
-      cli::cli_alert_warning(
-        "Note: Operations may not work as expected without activation."
-      )
-    }
-  } else {
-    cli::cli_alert_info(
-      "Activating renv project at {.path {project_dir}}..."
-    )
-    renv::activate(project = project_dir)
-    cli::cli_alert_success("renv project activated.")
-  }
-
-  invisible(NULL)
-}
-
-.renv_paths_lockfile <- function(project = NULL) {
-  override <- Sys.getenv("RENV_PATHS_LOCKFILE", unset = NA)
-  if (!is.na(override)) {
-    last <- substr(override, nchar(override), nchar(override))
-    if (last %in% c("/", "\\")) {
-      override <- paste0(override, "renv.lock")
-    }
-    return(override)
-  }
-
-  if (is.null(project)) {
-    project <- getwd()
-  }
-
-  profile <- Sys.getenv("RENV_PROFILE", unset = NA)
-  if (!is.na(profile) && profile != "") {
-    lockfile_path <- file.path(
-      project, "renv", "profiles", profile, "renv.lock"
-    )
-  } else {
-    lockfile_path <- file.path(project, "renv.lock")
-  }
-
-  return(lockfile_path)
-}
-
-# Robust package name extraction
-.extract_pkg_name <- function(x) {
-  if (!is.character(x) || length(x) == 0 || is.na(x)) return("")
-  # Remove trailing slashes and branches
-  x <- sub("/+$", "", x)
-  x <- sub("[@#].*$", "", x)
-  pkg <- sub("^.*/", "", x)
-  if (!nzchar(pkg)) return(x)
-  pkg
-}
-
-# Bulletproof check for missing packages
-.get_missing_pkgs <- function(pkgs) {
-  if (length(pkgs) == 0L) return(character(0))
-  pkg_names <- vapply(pkgs, .extract_pkg_name, character(1))
-  
-  is_missing <- vapply(pkg_names, function(p) {
-    if (!is.character(p) || length(p) == 0 || is.na(p) || p == "") return(TRUE)
-    !requireNamespace(p, quietly = TRUE)
-  }, logical(1))
-  
-  pkgs[is_missing]
-}
-
-.parse_dep_field <- function(field_val) {
-  if (is.null(field_val) || length(field_val) == 0) return(character(0))
-  pkgs <- trimws(gsub("\\s*\\(.*?\\)", "", as.character(field_val)))
-  pkgs[nzchar(pkgs)]
-}
-
-.deps_from_requirements_pkg <- function(pkg_info) {
-  reqs <- pkg_info$Requirements
-  if (is.null(reqs)) return(character(0))
-
-  if (is.character(reqs)) {
-    return(as.character(reqs))
-  } else if (is.list(reqs)) {
-    return(names(reqs))
-  }
-  character(0)
-}
-
-.deps_from_requirements <- function(lockfile_list_pkg) {
-  has_requirements <- any(
-    vapply(lockfile_list_pkg, function(x) !is.null(x$Requirements), logical(1))
-  )
-  if (!has_requirements) return(NULL)
-  lapply(lockfile_list_pkg, .deps_from_requirements_pkg)
-}
-
-.deps_from_description_fields <- function(lockfile_list_pkg) {
-  dep_fields <- c("Depends", "Imports", "LinkingTo")
-  has_fields <- any(vapply(lockfile_list_pkg, function(x) {
-    any(dep_fields %in% names(x))
-  }, logical(1)))
-  if (!has_fields) return(NULL)
-  lapply(lockfile_list_pkg, .extract_pkg_deps)
-}
-
-.extract_pkg_deps <- function(pkg_info) {
-  deps <- character(0)
-  fields <- c("Depends", "Imports", "LinkingTo")
-
-  for (field in fields) {
-    val <- pkg_info[[field]]
-    if (!is.null(val) && length(val) > 0) {
-      if (is.list(val)) {
-        val <- if (!is.null(names(val))) names(val) else unlist(val)
-      }
-      if (length(val) > 0) {
-        field_deps <- unlist(strsplit(as.character(val), ",\\s*"))
-        parsed <- unlist(lapply(field_deps, .parse_dep_field))
-        deps <- c(deps, parsed)
-      }
-    }
-  }
-
-  unique(deps[deps != "R"])
-}
-
-.renv_lockfile_read_pkgs <- function() {
-  tryCatch({
-    lockfile_path <- renv::paths$lockfile()
-    if (!file.exists(lockfile_path)) {
-      return(list())
-    }
-    lockfile_list_pkg <- renv::lockfile_read(file = lockfile_path)$Packages
-    if (is.null(lockfile_list_pkg)) {
-      return(list())
-    }
-    lockfile_list_pkg
-  }, error = function(e) {
-    list()
-  })
-}
-
-.renv_lockfile_deps_get <- function(lockfile_list_pkg = NULL) {
-  if (is.null(lockfile_list_pkg)) {
-    lockfile_list_pkg <- tryCatch({
-      .renv_lockfile_read_pkgs()
-    }, error = function(e) {
-      cli::cli_alert_warning(
-        paste0("Could not read lockfile Packages ",
-               "(skip_if_dep_unavailable ignored): {e$message}")
-      )
-      NULL
-    })
-  }
-
-  if (is.null(lockfile_list_pkg) || length(lockfile_list_pkg) == 0) {
-    return(list())
-  }
-
-  deps <- .deps_from_requirements(lockfile_list_pkg)
-  if (!is.null(deps)) return(deps)
-
-  deps <- .deps_from_description_fields(lockfile_list_pkg)
-  if (!is.null(deps)) return(deps)
-
-  cli::cli_alert_warning(
-    paste0("Could not extract package dependencies from lockfile; ",
-           "skip_if_dep_unavailable will be ignored.")
-  )
-  list()
-}
-
-.renv_lockfile_pkg_get <- function(lockfile_list_pkg = NULL) {
-  if (is.null(lockfile_list_pkg)) {
-    lockfile_list_pkg <- .renv_lockfile_read_pkgs()
-  }
-
-  if (length(lockfile_list_pkg) == 0L) {
-    return(list(
-      regular = character(),
-      bioc = character(),
-      gh = character()
-    ))
-  }
-
-  pkg_names <- names(lockfile_list_pkg)
-
-  remote_usernames <- vapply(
-    lockfile_list_pkg,
-    function(x) if (is.null(x$RemoteUsername)) "" else x$RemoteUsername,
-    character(1),
-    USE.NAMES = FALSE
-  )
-
-  sources <- vapply(
-    lockfile_list_pkg,
-    function(x) if (is.null(x$Source)) "" else tolower(x$Source),
-    character(1),
-    USE.NAMES = FALSE
-  )
-
-  is_gh <- remote_usernames != ""
-  is_bioc <- !is_gh & grepl("bioc", sources)
-  is_regular <- !is_gh & !is_bioc
-
-  list(
-    regular = pkg_names[is_regular],
-    bioc = pkg_names[is_bioc],
-    gh = paste0(remote_usernames[is_gh], "/", pkg_names[is_gh])
-  )
-}
-
 .renv_restore_or_update_impl <- function(package_list,
-                                               github,
-                                               non_github,
-                                               restore,
-                                               biocmanager_install,
-                                               skip = character(0),
-                                               skip_if_dep_unavailable = TRUE,
-                                               lockfile_list_pkg = NULL) {
+                                         github,
+                                         non_github,
+                                         restore,
+                                         biocmanager_install,
+                                         skip = character(0),
+                                         skip_if_dep_unavailable = TRUE,
+                                         lockfile_list_pkg = NULL,
+                                         prompt = FALSE,
+                                         transactional = FALSE,
+                                         args_restore = list(),
+                                         args_install = list(),
+                                         args_update = list()) {
   lockfile_deps <- .renv_lockfile_deps_get(lockfile_list_pkg)
 
   .renv_restore_or_update_actual_wrapper(
@@ -271,7 +21,12 @@
     biocmanager_install = biocmanager_install,
     skip = skip,
     skip_if_dep_unavailable = skip_if_dep_unavailable,
-    lockfile_deps = lockfile_deps
+    lockfile_deps = lockfile_deps,
+    prompt = prompt,
+    transactional = transactional,
+    args_restore = args_restore,
+    args_install = args_install,
+    args_update = args_update
   )
 
   .renv_restore_or_update_actual_wrapper(
@@ -282,7 +37,12 @@
     biocmanager_install = biocmanager_install,
     skip = skip,
     skip_if_dep_unavailable = skip_if_dep_unavailable,
-    lockfile_deps = lockfile_deps
+    lockfile_deps = lockfile_deps,
+    prompt = prompt,
+    transactional = transactional,
+    args_restore = args_restore,
+    args_install = args_install,
+    args_update = args_update
   )
 
   .renv_restore_or_update_actual_wrapper(
@@ -293,7 +53,12 @@
     biocmanager_install = biocmanager_install,
     skip = skip,
     skip_if_dep_unavailable = skip_if_dep_unavailable,
-    lockfile_deps = lockfile_deps
+    lockfile_deps = lockfile_deps,
+    prompt = prompt,
+    transactional = transactional,
+    args_restore = args_restore,
+    args_install = args_install,
+    args_update = args_update
   )
   invisible(TRUE)
 }
@@ -305,7 +70,12 @@
                                                    biocmanager_install,
                                                    skip = character(0),
                                                    skip_if_dep_unavailable = TRUE,
-                                                   lockfile_deps = list()) {
+                                                   lockfile_deps = list(),
+                                                   prompt = FALSE,
+                                                   transactional = FALSE,
+                                                   args_restore = list(),
+                                                   args_install = list(),
+                                                   args_update = list()) {
   pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
   
   idx_keep <- !pkg_names %in% skip
@@ -334,7 +104,12 @@
       biocmanager_install,
       is_bioc = (source == "Bioconductor"),
       skip_if_dep_unavailable = skip_if_dep_unavailable,
-      lockfile_deps = lockfile_deps
+      lockfile_deps = lockfile_deps,
+      prompt = prompt,
+      transactional = transactional,
+      args_restore = args_restore,
+      args_install = args_install,
+      args_update = args_update
     )
   } else {
     action <- if (restore) "restoring" else "installing"
@@ -343,9 +118,14 @@
 }
 
 .renv_restore_update_actual <- function(pkg, restore, biocmanager_install,
-                                         is_bioc,
-                                         skip_if_dep_unavailable = TRUE,
-                                         lockfile_deps = list()) {
+                                        is_bioc,
+                                        skip_if_dep_unavailable = TRUE,
+                                        lockfile_deps = list(),
+                                        prompt = FALSE,
+                                        transactional = FALSE,
+                                        args_restore = list(),
+                                        args_install = list(),
+                                        args_update = list()) {
   if (length(pkg) == 0L) {
     return(invisible(FALSE))
   }
@@ -362,7 +142,6 @@
 
   pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
 
-  # CRITICAL FIX: Filter out malformed empty names right away
   valid_idx <- nzchar(pkg_names) & !is.na(pkg_names)
   if (!all(valid_idx)) {
     invalid_pkgs_clean <- gsub("[{}]", "", pkg[!valid_idx])
@@ -376,8 +155,13 @@
     cli::cli_alert_info(
       "Attempting to restore {pkg_type} packages: {.pkg {pkg_names}}"
     )
+    
+    # Safe combination of defaults + user arguments (defaults take precedence)
+    call_args <- c(list(packages = pkg_names, prompt = prompt, transactional = transactional), args_restore)
+    call_args <- call_args[!duplicated(names(call_args))]
+
     tryCatch(
-      renv::restore(packages = pkg_names, transactional = FALSE),
+      do.call(renv::restore, call_args),
       error = function(e) {
         cli::cli_alert_danger(
           "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}."
@@ -387,17 +171,19 @@
     )
     cli::cli_alert_info("Checking for packages that failed to restore.")
     
-    # CRITICAL FIX: We must pass 'pkg' (the remotes) here, not 'pkg_names'
     .renv_restore_remaining(
       pkg,
       skip_if_dep_unavailable = skip_if_dep_unavailable,
-      lockfile_deps = lockfile_deps
+      lockfile_deps = lockfile_deps,
+      prompt = prompt,
+      transactional = transactional,
+      args_restore = args_restore
     )
   } else {
     cli::cli_alert_info(
       "Installing latest {pkg_type} packages: {.pkg {pkg_names}}"
     )
-    .renv_install(pkg, biocmanager_install, is_bioc)
+    .renv_install(pkg, biocmanager_install, is_bioc, prompt, args_install, args_update)
   }
 
   cli::cli_alert_info("Checking for packages that are still not installed.")
@@ -406,14 +192,20 @@
     biocmanager_install,
     is_bioc,
     skip_if_dep_unavailable = skip_if_dep_unavailable,
-    lockfile_deps = lockfile_deps
+    lockfile_deps = lockfile_deps,
+    prompt = prompt,
+    args_install = args_install,
+    args_update = args_update
   )
   invisible(TRUE)
 }
 
 .renv_restore_remaining <- function(pkg,
-                                     skip_if_dep_unavailable = TRUE,
-                                     lockfile_deps = list()) {
+                                    skip_if_dep_unavailable = TRUE,
+                                    lockfile_deps = list(),
+                                    prompt = FALSE,
+                                    transactional = FALSE,
+                                    args_restore = list()) {
   .ensure_cli()
 
   pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
@@ -445,7 +237,6 @@
       next
     }
 
-    # CRITICAL FIX: Check requireNamespace using pname, but restore using x
     if (!requireNamespace(pname, quietly = TRUE)) {
       if (.is_blocked_by_failed_deps(
         pkg_name = pname,
@@ -457,8 +248,12 @@
         failed_pkgs <- c(failed_pkgs, pname)
         next
       }
+
+      call_args <- c(list(packages = x, prompt = prompt, transactional = transactional), args_restore)
+      call_args <- call_args[!duplicated(names(call_args))]
+
       tryCatch(
-        renv::restore(packages = x, transactional = FALSE),
+        do.call(renv::restore, call_args),
         error = function(e) {
           safe_x <- gsub("[{}]", "", x)
           cli::cli_alert_danger("Failed to restore package: {.pkg {safe_x}}.")
@@ -474,7 +269,7 @@
   }
 }
 
-.renv_install <- function(pkg, biocmanager_install, is_bioc) {
+.renv_install <- function(pkg, biocmanager_install, is_bioc, prompt = FALSE, args_install = list(), args_update = list()) {
   .ensure_cli()
 
   if (is_bioc) {
@@ -486,10 +281,14 @@
         cli::cli_alert_info(
           "Installing Bioconductor packages using renv: {.pkg {pkg}}"
         )
+        
+        call_args <- c(list(packages = paste0("bioc::", pkg), prompt = prompt), args_update, args_install)
+        call_args <- call_args[!duplicated(names(call_args))]
+
         tryCatch(
-          renv::install(paste0("bioc::", pkg), prompt = FALSE),
+          do.call(renv::install, call_args),
           error = function(e) {
-            cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}.")
+            cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager fallback: {.pkg {pkg}}.")
             message("Error: ", e$message)
           }
         )
@@ -498,7 +297,7 @@
           "Installing Bioconductor packages using BiocManager: {.pkg {pkg}}"
         )
         tryCatch(
-          BiocManager::install(pkg, update = TRUE, ask = FALSE),
+          BiocManager::install(pkg, update = TRUE, ask = prompt),
           error = function(e) {
             cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}.")
             message("Error: ", e$message)
@@ -509,8 +308,12 @@
       cli::cli_alert_info(
         "Installing Bioconductor packages using renv: {.pkg {pkg}}"
       )
+      
+      call_args <- c(list(packages = paste0("bioc::", pkg), prompt = prompt), args_update, args_install)
+      call_args <- call_args[!duplicated(names(call_args))]
+
       tryCatch(
-        renv::install(paste0("bioc::", pkg), prompt = FALSE),
+        do.call(renv::install, call_args),
         error = function(e) {
           cli::cli_alert_danger("Failed to install Bioconductor packages via renv: {.pkg {pkg}}.")
           message("Error: ", e$message)
@@ -519,8 +322,12 @@
     }
   } else {
     cli::cli_alert_info("Installing packages: {.pkg {pkg}}")
+    
+    call_args <- c(list(packages = pkg, prompt = prompt), args_update, args_install)
+    call_args <- call_args[!duplicated(names(call_args))]
+
     tryCatch(
-      renv::install(pkg, prompt = FALSE),
+      do.call(renv::install, call_args),
       error = function(e) {
         safe_pkg <- gsub("[{}]", "", pkg)
         cli::cli_alert_danger("Failed to install packages: {.pkg {safe_pkg}}.")
@@ -530,34 +337,12 @@
   }
 }
 
-.is_blocked_by_failed_deps <- function(pkg_name,
-                                        failed_pkgs,
-                                        installed_now,
-                                        skip_if_dep_unavailable,
-                                        lockfile_deps) {
-  if (skip_if_dep_unavailable && length(failed_pkgs) > 0L) {
-    x_deps <- lockfile_deps[[pkg_name]]
-    if (!is.null(x_deps) && length(x_deps) > 0L) {
-      blocking <- failed_pkgs[
-        failed_pkgs %in% x_deps & !failed_pkgs %in% installed_now
-      ]
-      if (length(blocking) > 0L) {
-        cli::cli_alert_warning(
-          paste0(
-            "Skipping {.pkg {pkg_name}}: dep ",
-            "{.pkg {blocking}} failed and is not installed."
-          )
-        )
-        return(TRUE)
-      }
-    }
-  }
-  FALSE
-}
-
 .renv_install_remaining <- function(pkg, biocmanager_install, is_bioc,
-                                     skip_if_dep_unavailable = TRUE,
-                                     lockfile_deps = list()) {
+                                    skip_if_dep_unavailable = TRUE,
+                                    lockfile_deps = list(),
+                                    prompt = FALSE,
+                                    args_install = list(),
+                                    args_update = list()) {
   .ensure_cli()
 
   pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
@@ -577,7 +362,7 @@
   )
   cli::cli_alert_info("Attempting to install remaining packages.")
 
-  .renv_install(pkg_remaining, biocmanager_install, is_bioc)
+  .renv_install(pkg_remaining, biocmanager_install, is_bioc, prompt, args_install, args_update)
 
   pkg_still_missing <- .get_missing_pkgs(pkg_remaining)
   
@@ -618,7 +403,7 @@
         failed_pkgs <- c(failed_pkgs, pname)
         next
       }
-      .renv_install(x, biocmanager_install, is_bioc)
+      .renv_install(x, biocmanager_install, is_bioc, prompt, args_install, args_update)
       if (!requireNamespace(pname, quietly = TRUE)) {
         failed_pkgs <- c(failed_pkgs, pname)
       } else {
