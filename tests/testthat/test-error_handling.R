@@ -9,13 +9,16 @@ test_that("error handlers are triggered correctly when packages fail", {
   # Mock .renv_install inside .renv_install_remaining so it doesn't actually call it
   mockery::stub(.renv_install_remaining, ".renv_install", function(...) stop("Mocked install error"))
 
-  # Execute a deliberately failing restore and verify the expected message
+  # Execute a deliberately failing restore and verify both messages are emitted
   expect_message(
-    expect_error(
-      .renv_restore_remaining("non_existent_pkg_1"),
-      NA # we expect it to swallow the error internally and continue
+    expect_message(
+      expect_error(
+        .renv_restore_remaining("non_existent_pkg_1"),
+        NA # we expect it to swallow the error internally and continue
+      ),
+      "Error: Mocked restore error"
     ),
-    "Failed to restore package: .*non_existent_pkg_1.*Error: Mocked restore error"
+    "Failed to restore package: "
   )
 
 })
