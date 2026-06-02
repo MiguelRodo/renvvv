@@ -23,34 +23,47 @@
 #'   `TRUE`, skip installing a package during the update step when one of its
 #'   lockfile-listed dependencies previously failed to install and is not
 #'   currently available. Default is `TRUE`.
+#' @param prompt Logical. Whether to prompt for user confirmation during renv
+#'   operations. Default is `FALSE`.
+#' @param transactional Logical. Whether to use transactional package
+#'   restoration. Default is `FALSE`.
+#' @param args_restore List. Arbitrary arguments to pass down to `renv::restore()`.
+#' @param args_update List. Arbitrary arguments to pass down for update operations.
+#' @param args_install List. Arbitrary arguments to pass down to `renv::install()`.
 #'
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
-#' @examples
-#' \dontrun{
-#' # Restore and then update all packages
-#' renvvv_restore_and_update()
-#'
-#' # Skip specific packages
-#' renvvv_restore_and_update(skip = c("dplyr", "ggplot2"))
-#'
-#' # Attempt every package during update even if a dependency failed
-#' renvvv_restore_and_update(skip_if_dep_unavailable = FALSE)
-#' }
-#'
 #' @export
 renvvv_restore_and_update <- function(github = TRUE,
-                                          non_github = TRUE,
-                                          biocmanager_install = FALSE,
-                                          skip = character(0),
-                                          skip_if_dep_unavailable = TRUE) {
-  renvvv_restore(github, non_github, biocmanager_install, skip)
+                                      non_github = TRUE,
+                                      biocmanager_install = FALSE,
+                                      skip = character(0),
+                                      skip_if_dep_unavailable = TRUE,
+                                      prompt = FALSE,
+                                      transactional = FALSE,
+                                      args_restore = list(),
+                                      args_update = list(),
+                                      args_install = list()) {
+  renvvv_restore(
+    github = github, 
+    non_github = non_github, 
+    biocmanager_install = biocmanager_install, 
+    skip = skip,
+    prompt = prompt,
+    transactional = transactional,
+    args_restore = args_restore,
+    args_install = args_install
+  )
   renvvv_update(
-    github,
-    non_github,
-    biocmanager_install,
-    skip,
-    skip_if_dep_unavailable = skip_if_dep_unavailable
+    github = github,
+    non_github = non_github,
+    biocmanager_install = biocmanager_install,
+    skip = skip,
+    skip_if_dep_unavailable = skip_if_dep_unavailable,
+    prompt = prompt,
+    transactional = transactional,
+    args_update = args_update,
+    args_install = args_install
   )
   invisible(TRUE)
 }
