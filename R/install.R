@@ -134,9 +134,14 @@ renvvv_install <- function(packages, prompt = FALSE, args_install = list()) {
         }
       },
       error = function(e) {
-        cli::cli_alert_danger("Error installing {.pkg {nm}}.")
-        message("Error: ", e$message)
-        failed_final <<- c(failed_final, nm)
+        # Trust but verify on JSON errors
+        if (!requireNamespace(nm, quietly = TRUE)) {
+          cli::cli_alert_danger("Error installing {.pkg {nm}}.")
+          message("Error: ", e$message)
+          failed_final <<- c(failed_final, nm)
+        } else {
+          cli::cli_alert_warning("renv reported an error, but {.pkg {nm}} is loadable.")
+        }
       }
     )
   }

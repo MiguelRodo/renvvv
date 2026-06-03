@@ -156,17 +156,24 @@
       "Attempting to restore {pkg_type} packages: {.pkg {pkg_names}}"
     )
     
-    # Safe combination of defaults + user arguments (defaults take precedence)
+    # Safe combination of defaults + user arguments
     call_args <- c(list(packages = pkg_names, prompt = prompt, transactional = transactional), args_restore)
     call_args <- call_args[!duplicated(names(call_args))]
+
+    # Read lockfile for strict verification
+    lock_data <- tryCatch(renv:::renv_json_read(.renv_paths_lockfile()), error = function(e) NULL)
+    lock_packages <- if (!is.null(lock_data)) lock_data$Packages else NULL
 
     tryCatch(
       do.call(renv::restore, call_args),
       error = function(e) {
-        cli::cli_alert_danger(
-          "Failed to restore {pkg_type} packages: {.pkg {pkg_names}}."
-        )
-        message("Error: ", e$message)
+        missing <- .get_missing_pkgs(pkg_names, lockfile_packages = lock_packages)
+        if (length(missing) > 0L) {
+          cli::cli_alert_danger("Failed to restore {pkg_type} packages: {.pkg {missing}}.")
+          message("Error: ", e$message)
+        } else {
+          cli::cli_alert_warning("renv reported an error, but packages were successfully restored.")
+        }
       }
     )
     cli::cli_alert_info("Checking for packages that failed to restore.")
@@ -208,8 +215,11 @@
                                     args_restore = list()) {
   .ensure_cli()
 
+  lock_data <- tryCatch(renv:::renv_json_read(.renv_paths_lockfile()), error = function(e) NULL)
+  lock_packages <- if (!is.null(lock_data)) lock_data$Packages else NULL
+
   pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
-  missing_pkgs <- .get_missing_pkgs(pkg)
+  missing_pkgs <- .get_missing_pkgs(pkg, lockfile_packages = lock_packages)
   
   idx_missing <- pkg %in% missing_pkgs
   pkg_remaining <- pkg[idx_missing]
@@ -237,7 +247,7 @@
       next
     }
 
-    if (!requireNamespace(pname, quietly = TRUE)) {
+    if (length(.get_missing_pkgs(pname, lockfile_packages = lock_packages)) > 0L) {
       if (.is_blocked_by_failed_deps(
         pkg_name = pname,
         failed_pkgs = failed_pkgs,
@@ -255,12 +265,15 @@
       tryCatch(
         do.call(renv::restore, call_args),
         error = function(e) {
-          safe_x <- gsub("[{}]", "", x)
-          cli::cli_alert_danger("Failed to restore package: {.pkg {safe_x}}.")
-          message("Error: ", e$message)
+          missing_loop <- .get_missing_pkgs(pname, lockfile_packages = lock_packages)
+          if (length(missing_loop) > 0L) {
+            safe_x <- gsub("[{}]", "", x)
+            cli::cli_alert_danger("Failed to restore package: {.pkg {safe_x}}.")
+            message("Error: ", e$message)
+          }
         }
       )
-      if (!requireNamespace(pname, quietly = TRUE)) {
+      if (length(.get_missing_pkgs(pname, lockfile_packages = lock_packages)) > 0L) {
         failed_pkgs <- c(failed_pkgs, pname)
       } else {
         installed_now <- c(installed_now, pname)
@@ -288,8 +301,11 @@
         tryCatch(
           do.call(renv::install, call_args),
           error = function(e) {
-            cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager fallback: {.pkg {pkg}}.")
-            message("Error: ", e$message)
+            missing <- .get_missing_pkgs(pkg)
+            if (length(missing) > 0L) {
+              cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager fallback: {.pkg {missing}}.")
+              message("Error: ", e$message)
+            }
           }
         )
       } else {
@@ -299,8 +315,11 @@
         tryCatch(
           BiocManager::install(pkg, update = TRUE, ask = prompt),
           error = function(e) {
-            cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {pkg}}.")
-            message("Error: ", e$message)
+            missing <- .get_missing_pkgs(pkg)
+            if (length(missing) > 0L) {
+              cli::cli_alert_danger("Failed to install Bioconductor packages using BiocManager: {.pkg {missing}}.")
+              message("Error: ", e$message)
+            }
           }
         )
       }
@@ -315,8 +334,11 @@
       tryCatch(
         do.call(renv::install, call_args),
         error = function(e) {
-          cli::cli_alert_danger("Failed to install Bioconductor packages via renv: {.pkg {pkg}}.")
-          message("Error: ", e$message)
+          missing <- .get_missing_pkgs(pkg)
+          if (length(missing) > 0L) {
+            cli::cli_alert_danger("Failed to install Bioconductor packages via renv: {.pkg {missing}}.")
+            message("Error: ", e$message)
+          }
         }
       )
     }
@@ -329,9 +351,12 @@
     tryCatch(
       do.call(renv::install, call_args),
       error = function(e) {
-        safe_pkg <- gsub("[{}]", "", pkg)
-        cli::cli_alert_danger("Failed to install packages: {.pkg {safe_pkg}}.")
-        message("Error: ", e$message)
+        missing <- .get_missing_pkgs(pkg)
+        if (length(missing) > 0L) {
+          safe_pkg <- gsub("[{}]", "", missing)
+          cli::cli_alert_danger("Failed to install packages: {.pkg {safe_pkg}}.")
+          message("Error: ", e$message)
+        }
       }
     )
   }
@@ -525,14 +550,31 @@
   pkg
 }
 
-# Bulletproof check for missing packages
-.get_missing_pkgs <- function(pkgs) {
+# Check for missing packages
+.get_missing_pkgs <- function(pkgs, lockfile_packages = NULL) {
   if (length(pkgs) == 0L) return(character(0))
   pkg_names <- vapply(pkgs, .extract_pkg_name, character(1))
   
-  is_missing <- vapply(pkg_names, function(p) {
+  inst <- utils::installed.packages()
+  inst_versions <- if (nrow(inst) > 0) inst[, "Version"] else character(0)
+  
+  is_missing <- vapply(seq_along(pkg_names), function(i) {
+    p <- pkg_names[i]
     if (!is.character(p) || length(p) == 0 || is.na(p) || p == "") return(TRUE)
-    !requireNamespace(p, quietly = TRUE)
+    
+    # 1. Base check: Is the namespace loadable?
+    if (!requireNamespace(p, quietly = TRUE)) return(TRUE)
+    
+    # 2. Strict Version Verification (Scenario A protection)
+    if (!is.null(lockfile_packages) && p %in% names(lockfile_packages)) {
+      expected <- lockfile_packages[[p]]$Version
+      actual <- inst_versions[[p]]
+      
+      # If the old version is still sitting on disk, it's a failed install
+      if (!identical(expected, actual)) return(TRUE)
+    }
+    
+    FALSE
   }, logical(1))
   
   pkgs[is_missing]
