@@ -43,6 +43,7 @@
 #' }
 #'
 #' @export
+#' @aliases renv3_restore
 renvvv_restore <- function(github = TRUE,
                            non_github = TRUE,
                            biocmanager_install = FALSE,
@@ -81,3 +82,6 @@ renvvv_restore <- function(github = TRUE,
   cli::cli_h1("renv environment restoration completed")
   invisible(TRUE)
 }
+
+#' @export
+renv3_restore <- renvvv_restore

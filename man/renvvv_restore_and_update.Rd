@@ -2,6 +2,7 @@
 % Please edit documentation in R/restore_and_update.R
 \name{renvvv_restore_and_update}
 \alias{renvvv_restore_and_update}
+\alias{renv3_restore_and_update}
 \title{Restore and Update renv Lockfile Packages}
 \usage{
 renvvv_restore_and_update(

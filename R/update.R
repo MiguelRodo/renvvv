@@ -33,6 +33,7 @@
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
 #' @export
+#' @aliases renv3_update
 renvvv_update <- function(github = TRUE,
                           non_github = TRUE,
                           biocmanager_install = FALSE,
@@ -72,3 +73,6 @@ renvvv_update <- function(github = TRUE,
   cli::cli_h1("renv environment update completed")
   invisible(TRUE)
 }
+
+#' @export
+renv3_update <- renvvv_update

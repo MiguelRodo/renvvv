@@ -2,6 +2,7 @@
 % Please edit documentation in R/update.R
 \name{renvvv_update}
 \alias{renvvv_update}
+\alias{renv3_update}
 \title{Update renv Lockfile Packages}
 \usage{
 renvvv_update(

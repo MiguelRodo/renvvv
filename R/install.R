@@ -26,6 +26,7 @@
 #' }
 #'
 #' @export
+#' @aliases renv3_install
 renvvv_install <- function(packages, prompt = FALSE, args_install = list()) {
   # Sanitize to prevent overriding core arguments
   args_install[c("packages", "prompt")] <- NULL
@@ -155,3 +156,6 @@ renvvv_install <- function(packages, prompt = FALSE, args_install = list()) {
   cli::cli_h1("Robust package installation completed")
   invisible(TRUE)
 }
+
+#' @export
+renv3_install <- renvvv_install

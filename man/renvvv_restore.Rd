@@ -2,6 +2,7 @@
 % Please edit documentation in R/restore.R
 \name{renvvv_restore}
 \alias{renvvv_restore}
+\alias{renv3_restore}
 \title{Restore renv Lockfile Packages}
 \usage{
 renvvv_restore(

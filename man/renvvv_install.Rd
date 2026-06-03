@@ -2,6 +2,7 @@
 % Please edit documentation in R/install.R
 \name{renvvv_install}
 \alias{renvvv_install}
+\alias{renv3_install}
 \title{Install Packages Robustly}
 \usage{
 renvvv_install(packages, prompt = FALSE, args_install = list())

@@ -34,6 +34,7 @@
 #' @return Invisibly returns `TRUE` upon successful completion.
 #'
 #' @export
+#' @aliases renv3_restore_and_update
 renvvv_restore_and_update <- function(github = TRUE,
                                       non_github = TRUE,
                                       biocmanager_install = FALSE,
@@ -67,3 +68,6 @@ renvvv_restore_and_update <- function(github = TRUE,
   )
   invisible(TRUE)
 }
+
+#' @export
+renv3_restore_and_update <- renvvv_restore_and_update
