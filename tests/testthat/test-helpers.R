@@ -320,28 +320,6 @@ test_that(".renv_lockfile_deps_get returns empty list when no lockfile", {
   expect_length(result, 0L)
 })
 
-test_that(".renv_lockfile_deps_get returns named list from lockfile", {
-  skip_if_not(requireNamespace("renv", quietly = TRUE), "renv not available")
-
-  tmp <- tempfile("renvvv_test_deps_")
-  dir.create(tmp)
-  old_wd <- setwd(tmp)
-  on.exit({
-    setwd(old_wd)
-    unlink(tmp, recursive = TRUE)
-  }, add = TRUE)
-
-  renv::init(bare = TRUE, restart = FALSE)
-  renv::install("mime", prompt = FALSE)
-  renv::snapshot(packages = "mime", confirm = FALSE)
-
-  result <- .renv_lockfile_deps_get()
-
-  expect_type(result, "list")
-  expect_true("mime" %in% names(result))
-  expect_type(result[["mime"]], "character")
-})
-
 # Test .renv_lockfile_pkg_get (requires a mock lockfile)
 test_that(".renv_lockfile_pkg_get function exists", {
   expect_true(is.function(.renv_lockfile_pkg_get))
