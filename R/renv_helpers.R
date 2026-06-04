@@ -161,7 +161,7 @@
     call_args <- call_args[!duplicated(names(call_args))]
 
     # Read lockfile for strict verification
-    lock_data <- tryCatch(renv::renv_lockfile_read(.renv_paths_lockfile()), error = function(e) NULL)
+    lock_data <- tryCatch(renv::lockfile_read(.renv_paths_lockfile()), error = function(e) NULL)
     lock_packages <- if (!is.null(lock_data)) lock_data$Packages else NULL
 
     tryCatch(
@@ -215,7 +215,7 @@
                                     args_restore = list()) {
   .ensure_cli()
 
-  lock_data <- tryCatch(renv::renv_lockfile_read(.renv_paths_lockfile()), error = function(e) NULL)
+  lock_data <- tryCatch(renv::lockfile_read(.renv_paths_lockfile()), error = function(e) NULL)
   lock_packages <- if (!is.null(lock_data)) lock_data$Packages else NULL
 
   pkg_names <- vapply(pkg, .extract_pkg_name, character(1))
