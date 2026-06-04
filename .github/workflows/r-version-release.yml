@@ -6,12 +6,19 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Exact version (e.g. v1.2.3). Cannot be used with bump_type.'
-        required: false
       bump_type:
-        description: 'Component to bump: major | minor | patch. Cannot be used with version.'
+        description: 'Version component to bump (major, minor, patch)'
         required: false
+        type: choice
+        options:
+          - ''
+          - patch
+          - minor
+          - major
+      version:
+        description: 'Exact version to build (e.g. v1.2.3). Leave blank if using bump_type.'
+        required: false
+        type: string
       version_force:
         description: 'When true, skip strict version progression checks.'
         required: false
