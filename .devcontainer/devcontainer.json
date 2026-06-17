@@ -1,5 +1,5 @@
 {
-  "image": "ghcr.io/miguelrodo/devcontainers-main:v1.3.0",
+  "image": "ghcr.io/miguelrodo/devcontainers-main:v1.11.0",
   "customizations": {
     "vscode": {
       "extensions": [

@@ -568,6 +568,10 @@
     # 2. Strict Version Verification (Scenario A protection)
     if (!is.null(lockfile_packages) && p %in% names(lockfile_packages)) {
       expected <- lockfile_packages[[p]]$Version
+      
+      # Check if the package actually exists in the installed packages list
+      if (!(p %in% names(inst_versions))) return(TRUE)
+      
       actual <- inst_versions[[p]]
       
       # If the old version is still sitting on disk, it's a failed install
