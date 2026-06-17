@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://MiguelRodo.github.io/renvvv/cran-comments.html</loc>
-    <lastmod>2026-06-05T08:44:10.902Z</lastmod>
-  </url>
-  <url>
-    <loc>https://MiguelRodo.github.io/renvvv/vignettes/renvvv.html</loc>
-    <lastmod>2026-06-05T08:44:10.903Z</lastmod>
-  </url>
-  <url>
-    <loc>https://MiguelRodo.github.io/renvvv/articles/getting-started.html</loc>
-    <lastmod>2026-06-05T08:44:10.901Z</lastmod>
-  </url>
-  <url>
-    <loc>https://MiguelRodo.github.io/renvvv/LICENSE.html</loc>
-    <lastmod>2026-06-05T08:44:10.901Z</lastmod>
-  </url>
-  <url>
     <loc>https://MiguelRodo.github.io/renvvv/index.html</loc>
-    <lastmod>2026-06-05T08:44:10.902Z</lastmod>
+    <lastmod>2026-06-17T11:55:31.696Z</lastmod>
   </url>
   <url>
     <loc>https://MiguelRodo.github.io/renvvv/NEWS.html</loc>
-    <lastmod>2026-06-05T08:44:10.901Z</lastmod>
+    <lastmod>2026-06-17T11:55:31.696Z</lastmod>
+  </url>
+  <url>
+    <loc>https://MiguelRodo.github.io/renvvv/articles/getting-started.html</loc>
+    <lastmod>2026-06-17T11:55:31.696Z</lastmod>
+  </url>
+  <url>
+    <loc>https://MiguelRodo.github.io/renvvv/cran-comments.html</loc>
+    <lastmod>2026-06-17T11:55:31.696Z</lastmod>
+  </url>
+  <url>
+    <loc>https://MiguelRodo.github.io/renvvv/LICENSE.html</loc>
+    <lastmod>2026-06-17T11:55:31.696Z</lastmod>
+  </url>
+  <url>
+    <loc>https://MiguelRodo.github.io/renvvv/vignettes/renvvv.html</loc>
+    <lastmod>2026-06-17T11:55:31.698Z</lastmod>
   </url>
 </urlset>
